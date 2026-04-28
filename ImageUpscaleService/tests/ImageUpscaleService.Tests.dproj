@@ -61,18 +61,22 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
         <AppDPIAwarenessMode>none</AppDPIAwarenessMode>
+        <DCC_Namespace>System;Winapi;System.Win;Data;Data.Win;Datasnap;Datasnap.Win;Web;Web.Win;Soap;Soap.Win;Xml;Xml.Win;Vcl;$(DCC_Namespace)</DCC_Namespace>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_Win64)'!=''">
         <AppDPIAwarenessMode>none</AppDPIAwarenessMode>
+        <DCC_Namespace>System;Winapi;System.Win;Data;Data.Win;Datasnap;Datasnap.Win;Web;Web.Win;Soap;Soap.Win;Xml;Xml.Win;Vcl;$(DCC_Namespace)</DCC_Namespace>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
         <DCC_Define>RELEASE;$(DCC_Define)</DCC_Define>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
         <AppDPIAwarenessMode>none</AppDPIAwarenessMode>
+        <DCC_Namespace>System;Winapi;System.Win;Data;Data.Win;Datasnap;Datasnap.Win;Web;Web.Win;Soap;Soap.Win;Xml;Xml.Win;Vcl;$(DCC_Namespace)</DCC_Namespace>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Win64)'!=''">
         <AppDPIAwarenessMode>none</AppDPIAwarenessMode>
+        <DCC_Namespace>System;Winapi;System.Win;Data;Data.Win;Datasnap;Datasnap.Win;Web;Web.Win;Soap;Soap.Win;Xml;Xml.Win;Vcl;$(DCC_Namespace)</DCC_Namespace>
     </PropertyGroup>
     <ItemGroup>
         <DelphiCompile Include="$(MainSource)">
@@ -93,6 +97,8 @@
         <DCCReference Include="IUS.Tests.Config.pas"/>
         <DCCReference Include="..\src\IUS.Upscaler.Native.pas"/>
         <DCCReference Include="..\src\IUS.Upscaler.DelphiGemini.pas"/>
+        <DCCReference Include="..\src\IUS.Routes.pas"/>
+        <DCCReference Include="IUS.Tests.Smoke.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

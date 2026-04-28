@@ -22,6 +22,8 @@ uses
   IUS.Tests.JobQueue in 'IUS.Tests.JobQueue.pas',
   IUS.Config in '..\src\IUS.Config.pas',
   IUS.Tests.Config in 'IUS.Tests.Config.pas',
+  IUS.Routes in '..\src\IUS.Routes.pas',
+  IUS.Tests.Smoke in 'IUS.Tests.Smoke.pas',
   DUnitX.TestFramework;
 
 {$IFDEF TESTINSIGHT}
