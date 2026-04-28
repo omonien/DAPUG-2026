@@ -28,6 +28,13 @@ type
 /// <summary>
 ///   Tries to parse a YYYY-MM-DD prefix from the basename of AFileName.
 /// </summary>
+/// <param name="AFileName">
+///   File name or full path. Only the basename is inspected.
+/// </param>
+/// <returns>
+///   Matched=True with Date populated when the basename starts with a valid
+///   YYYY-MM-DD; otherwise Matched=False and Date is undefined.
+/// </returns>
 function TryParseFilenameDate(const AFileName: string): TParseResult;
 
 implementation
