@@ -16,6 +16,8 @@ type
     [Test] procedure Bounded_RejectsOver20;
     [Test] procedure SetStatus_UpdatesJobInPlace;
     [Test] procedure ConcurrentEnqueue_AllSucceedUpToCap;
+    [Test] procedure Workers_ProcessQueuedJob_AndMarkDone;
+    [Test] procedure Sweep_RemovesOldJobsAndFiles;
   end;
 
 implementation
@@ -25,7 +27,10 @@ uses
   System.Classes,
   System.Threading,
   System.SyncObjs,
+  System.DateUtils,
+  System.IOUtils,
   IUS.Upscaler.Intf,
+  IUS.Upscaler.Fake,
   IUS.JobQueue;
 
 function MakeJob(const AQueue: TJobQueue): TGuid;
@@ -153,6 +158,64 @@ begin
           TInterlocked.Increment(LCount);
       end);
     Assert.AreEqual(30, LCount);
+  finally
+    LQueue.Free;
+  end;
+end;
+
+procedure TJobQueueTests.Workers_ProcessQueuedJob_AndMarkDone;
+var
+  LQueue: TJobQueue;
+  LFake: TFakeUpscaler;
+  LJob, LFetched: TJob;
+  LDeadline: TDateTime;
+  LTmp: string;
+begin
+  LQueue := TJobQueue.Create(20);
+  try
+    LFake := TFakeUpscaler.Create;
+    LQueue.StartWorkers(3, LFake, TPath.GetTempPath);
+
+    LTmp := TPath.Combine(TPath.GetTempPath, 'src_' + TGuid.NewGuid.ToString + '.png');
+    TFile.WriteAllBytes(LTmp, TBytes.Create($89, $50, $4E, $47));
+    try
+      Assert.IsTrue(LQueue.TryEnqueue('image/png', LTmp, TUpscaleResolution.Res2K, LJob));
+      LDeadline := IncSecond(Now, 5);
+      repeat
+        Sleep(50);
+        Assert.IsTrue(LQueue.TryGet(LJob.Id, LFetched));
+      until (LFetched.Status in [TJobStatus.Done, TJobStatus.Error]) or (Now > LDeadline);
+
+      Assert.AreEqual(Ord(TJobStatus.Done), Ord(LFetched.Status), LFetched.ErrorMsg);
+      Assert.IsTrue(LFetched.ResultPath <> '');
+    finally
+      if TFile.Exists(LTmp) then TFile.Delete(LTmp);
+    end;
+  finally
+    LQueue.StopWorkers;
+    LQueue.Free;
+  end;
+end;
+
+procedure TJobQueueTests.Sweep_RemovesOldJobsAndFiles;
+var
+  LQueue: TJobQueue;
+  LJob, LFetched: TJob;
+  LSrc: string;
+begin
+  LQueue := TJobQueue.Create(20);
+  try
+    LSrc := TPath.Combine(TPath.GetTempPath, 'sweep_' + TGuid.NewGuid.ToString + '.png');
+    TFile.WriteAllBytes(LSrc, TBytes.Create($89, $50, $4E, $47));
+    try
+      Assert.IsTrue(LQueue.TryEnqueue('image/png', LSrc, TUpscaleResolution.Res2K, LJob));
+      // Pretend the job is 60 minutes old
+      LQueue.SweepOnce(IncMinute(Now, 60));
+      Assert.IsFalse(LQueue.TryGet(LJob.Id, LFetched));
+      Assert.IsFalse(TFile.Exists(LSrc));
+    finally
+      if TFile.Exists(LSrc) then TFile.Delete(LSrc);
+    end;
   finally
     LQueue.Free;
   end;

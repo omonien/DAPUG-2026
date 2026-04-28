@@ -20,6 +20,7 @@ interface
 
 uses
   System.SysUtils,
+  System.Classes,
   System.Generics.Collections,
   System.SyncObjs,
   IUS.Upscaler.Intf;
@@ -44,6 +45,14 @@ type
     FLock: TCriticalSection;
     FByOrder: TQueue<TGuid>;
     FById: TDictionary<TGuid, TJob>;
+    FWorkers: TArray<TThread>;
+    FRunning: Boolean;
+    FUpscaler: IUpscaler;
+    FResultDir: string;
+    FCleanup: TThread;
+    FCleanupInterval: Integer;
+    FRetentionMinutes: Integer;
+    FUploadDir: string;
   public
     constructor Create(const ACap: Integer);
     destructor Destroy; override;
@@ -57,9 +66,26 @@ type
     procedure SetError(const AId: TGuid; const AMessage: string);
     procedure SetResult(const AId: TGuid; const AResultPath: string);
     function Count: Integer;
+
+    procedure StartWorkers(const ACount: Integer;
+                           const AUpscaler: IUpscaler;
+                           const AResultDir: string);
+    procedure StopWorkers;
+
+    procedure StartCleanup(const AUploadDir: string;
+                           const ARetentionMinutes: Integer;
+                           const AIntervalMs: Integer = 5 * 60 * 1000);
+    procedure StopCleanup;
+    /// <summary>Performs one sweep pass synchronously. Public for tests.</summary>
+    procedure SweepOnce(const ANow: TDateTime);
   end;
 
 implementation
+
+uses
+  System.IOUtils,
+  System.DateUtils,
+  IUS.Storage;
 
 constructor TJobQueue.Create(const ACap: Integer);
 begin
@@ -181,6 +207,134 @@ begin
     Result := FById.Count;
   finally
     FLock.Leave;
+  end;
+end;
+
+procedure TJobQueue.StartWorkers(const ACount: Integer;
+                                 const AUpscaler: IUpscaler;
+                                 const AResultDir: string);
+var
+  I: Integer;
+begin
+  FUpscaler := AUpscaler;
+  FResultDir := AResultDir;
+  IUS.Storage.EnsureDirectory(FResultDir);
+  FRunning := True;
+  SetLength(FWorkers, ACount);
+  for I := 0 to ACount - 1 do
+    FWorkers[I] := TThread.CreateAnonymousThread(
+      procedure
+      var LJob: TJob; LSource, LResult: TBytes; LResultPath: string;
+      begin
+        while FRunning do
+        begin
+          if TryDequeue(LJob) then
+          try
+            Writeln(Format('job=%s queued->running', [Copy(LJob.Id.ToString, 2, 8)]));
+            SetStatus(LJob.Id, TJobStatus.Running);
+            LSource := IUS.Storage.ReadAllBytes(LJob.SourcePath);
+            LResult := FUpscaler.Upscale(LSource, LJob.SourceMime, LJob.Resolution);
+            LResultPath := TPath.Combine(FResultDir, LJob.Id.ToString + '.png');
+            IUS.Storage.WriteAllBytes(LResultPath, LResult);
+            SetResult(LJob.Id, LResultPath);
+            Writeln(Format('job=%s running->done', [Copy(LJob.Id.ToString, 2, 8)]));
+          except
+            on E: Exception do
+            begin
+              SetError(LJob.Id, E.Message);
+              Writeln(Format('job=%s running->error: %s',
+                [Copy(LJob.Id.ToString, 2, 8), E.Message]));
+            end;
+          end
+          else
+            Sleep(50);
+        end;
+      end);
+  for I := 0 to ACount - 1 do
+  begin
+    FWorkers[I].FreeOnTerminate := False;
+    FWorkers[I].Start;
+  end;
+end;
+
+procedure TJobQueue.StopWorkers;
+var T: TThread;
+begin
+  FRunning := False;
+  for T in FWorkers do
+  begin
+    T.WaitFor;
+    T.Free;
+  end;
+  SetLength(FWorkers, 0);
+end;
+
+procedure TJobQueue.StartCleanup(const AUploadDir: string;
+                                 const ARetentionMinutes: Integer;
+                                 const AIntervalMs: Integer);
+begin
+  FUploadDir := AUploadDir;
+  FRetentionMinutes := ARetentionMinutes;
+  FCleanupInterval := AIntervalMs;
+  FCleanup := TThread.CreateAnonymousThread(
+    procedure
+    begin
+      while FRunning do
+      begin
+        SweepOnce(Now);
+        Sleep(FCleanupInterval);
+      end;
+    end);
+  FCleanup.FreeOnTerminate := False;
+  FCleanup.Start;
+end;
+
+procedure TJobQueue.StopCleanup;
+begin
+  if Assigned(FCleanup) then
+  begin
+    FCleanup.WaitFor;
+    FCleanup.Free;
+    FCleanup := nil;
+  end;
+end;
+
+procedure TJobQueue.SweepOnce(const ANow: TDateTime);
+var
+  LExpired: TArray<TGuid>;
+  LId: TGuid;
+  LJob: TJob;
+  LIds: TArray<TGuid>;
+  I: Integer;
+begin
+  FLock.Enter;
+  try
+    LIds := FById.Keys.ToArray;
+  finally
+    FLock.Leave;
+  end;
+  SetLength(LExpired, 0);
+  for I := 0 to High(LIds) do
+    if TryGet(LIds[I], LJob) and IUS.Storage.ShouldDelete(LJob.CreatedAt, FRetentionMinutes, ANow) then
+    begin
+      SetLength(LExpired, Length(LExpired) + 1);
+      LExpired[High(LExpired)] := LIds[I];
+    end;
+  for LId in LExpired do
+  begin
+    if TryGet(LId, LJob) then
+    begin
+      if (LJob.SourcePath <> '') and TFile.Exists(LJob.SourcePath) then
+        TFile.Delete(LJob.SourcePath);
+      if (LJob.ResultPath <> '') and TFile.Exists(LJob.ResultPath) then
+        TFile.Delete(LJob.ResultPath);
+    end;
+    FLock.Enter;
+    try
+      FById.Remove(LId);
+    finally
+      FLock.Leave;
+    end;
   end;
 end;
 
