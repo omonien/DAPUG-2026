@@ -1,0 +1,71 @@
+﻿object MainForm: TMainForm
+  Left = 0
+  Top = 0
+  Caption = 'DX.DateChanger'
+  ClientHeight = 320
+  ClientWidth = 480
+  FormFactor.Width = 480
+  FormFactor.Height = 320
+  FormFactor.Devices = [Desktop]
+  BorderStyle = Single
+  Position = ScreenCenter
+  OnCreate = FormCreate
+  DesignerMasterStyle = 0
+  object DropZone: TRectangle
+    Align = Client
+    Margins.Left = 16.0
+    Margins.Top = 16.0
+    Margins.Right = 16.0
+    Margins.Bottom = 16.0
+    Size.Width = 448.000000000000000000
+    Size.Height = 288.000000000000000000
+    Size.PlatformDefault = False
+    Stroke.Dash = Dash
+    Stroke.Color = claDarkgray
+    Fill.Color = claWhitesmoke
+    XRadius = 12.0
+    YRadius = 12.0
+    HitTest = True
+    OnDragOver = DropZoneDragOver
+    OnDragDrop = DropZoneDragDrop
+    object LabelTitle: TLabel
+      Align = Center
+      Size.Width = 400.000000000000000000
+      Size.Height = 32.000000000000000000
+      Size.PlatformDefault = False
+      TextSettings.HorzAlign = Center
+      TextSettings.Font.Size = 18.0
+      Text = 'Drop files here'
+    end
+    object LabelHint: TLabel
+      Align = Bottom
+      Margins.Bottom = 16.0
+      Size.Height = 24.000000000000000000
+      Size.PlatformDefault = False
+      TextSettings.HorzAlign = Center
+      TextSettings.Font.Size = 11.0
+      TextSettings.FontColor = claGray
+      TextSettings.WordWrap = True
+      Text = 'Filenames starting with YYYY-MM-DD will have their date set to that day, 10:00 local time.'
+    end
+    object LabelViewLog: TLabel
+      Align = Bottom
+      Margins.Right = 8.0
+      Margins.Bottom = 4.0
+      Size.Height = 18.000000000000000000
+      Size.PlatformDefault = False
+      Visible = False
+      TextSettings.HorzAlign = Trailing
+      TextSettings.Font.Size = 10.0
+      TextSettings.FontColor = claDodgerblue
+      Cursor = crHandPoint
+      Text = '[View log]'
+      OnClick = LabelViewLogClick
+    end
+  end
+  object RevertTimer: TTimer
+    Enabled = False
+    Interval = 5000
+    OnTimer = RevertTimerTimer
+  end
+end
