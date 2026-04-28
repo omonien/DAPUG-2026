@@ -1,0 +1,16 @@
+<div>
+  <div class="before-after">
+    <div>
+      <img src="/original/@jobId" alt="Original">
+      <div class="caption">Original</div>
+    </div>
+    <div>
+      <img src="/result/@jobId" alt="Remastered">
+      <div class="caption">Remastered at @resolutionText</div>
+    </div>
+  </div>
+  <div class="actions">
+    <a href="/result/@jobId" download="upscaled.png"><button type="button">Download</button></a>
+    <a hx-get="/" hx-target="#content" hx-swap="innerHTML" href="#">Try another</a>
+  </div>
+</div>

@@ -1,0 +1,18 @@
+<form hx-post="/upscale"
+      hx-encoding="multipart/form-data"
+      hx-target="#content"
+      hx-swap="innerHTML">
+  <div class="row">
+    <label>Image (JPEG / PNG / WebP, max 10 MB)</label>
+    <input type="file" name="image" accept="image/jpeg,image/png,image/webp" required>
+  </div>
+  <div class="row">
+    <label>Output resolution</label>
+    <div class="radios">
+      <label><input type="radio" name="resolution" value="1K"> 1K — faster, lighter</label>
+      <label><input type="radio" name="resolution" value="2K" checked> 2K — balanced</label>
+      <label><input type="radio" name="resolution" value="4K"> 4K — highest quality, slowest</label>
+    </div>
+  </div>
+  <button type="submit">Upscale</button>
+</form>
