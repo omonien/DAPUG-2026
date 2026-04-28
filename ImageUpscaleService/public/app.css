@@ -1,0 +1,48 @@
+:root {
+  --bg: #0f1115;
+  --card: #1a1d24;
+  --text: #e6e9ef;
+  --muted: #9aa3b2;
+  --accent: #4f8cff;
+  --accent-fg: #ffffff;
+  --error: #ff6b6b;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+  display: flex; align-items: center; justify-content: center;
+  min-height: 100vh;
+}
+.card {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 32px;
+  width: min(900px, 92vw);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+}
+h1 { margin: 0 0 24px; font-size: 22px; font-weight: 600; }
+form .row { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+input[type=file] { color: var(--text); }
+.radios { display: flex; gap: 16px; }
+.radios label { display: flex; align-items: center; gap: 6px; }
+button {
+  background: var(--accent); color: var(--accent-fg); border: 0;
+  padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer;
+}
+button:hover { filter: brightness(1.1); }
+.spinner {
+  display: inline-block; width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,0.2); border-top-color: var(--accent);
+  border-radius: 50%; animation: spin 1s linear infinite; vertical-align: -3px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.before-after { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+.before-after img { width: 100%; height: auto; border-radius: 8px; }
+.caption { color: var(--muted); font-size: 13px; margin-top: 8px; text-align: center; }
+.actions { margin-top: 16px; display: flex; gap: 12px; }
+.actions a { color: var(--accent); text-decoration: none; align-self: center; }
+.error { color: var(--error); }
+.muted { color: var(--muted); }
