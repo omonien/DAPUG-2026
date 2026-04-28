@@ -13,6 +13,7 @@ uses
   DUnitX.Loggers.Xml.NUnit,
   {$ENDIF }
   IUS.Tests.Prompt in 'IUS.Tests.Prompt.pas',
+  IUS.Tests.Validation in 'IUS.Tests.Validation.pas',
   DUnitX.TestFramework;
 
 {$IFDEF TESTINSIGHT}
