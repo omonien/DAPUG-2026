@@ -34,24 +34,53 @@ By the end of the materials you'll have:
 
 ## Repository layout
 
-Workshop content lives under dated edition folders. The folder name reflects the year and month of the edition; future editions will sit alongside in their own folders.
+```
+DAPUG-2026/
+├── Instructions/       # Agent rule files — the contract we hand to coding agents
+│   ├── CLAUDE.md       #   Universal coding rules (Clean Code, comments, language, tests)
+│   └── Delphi.md       #   Delphi-specific standards (encoding, naming, paths, headers, versioning)
+├── DX.DateChanger/     # Live-coded demo: cross-platform FMX desktop tool (see below)
+├── assets/             # Images and shared assets used in the README and slides
+├── LICENSE             # MIT
+├── .gitignore          # Delphi-optimised (binaries, IDE local files, build output)
+└── .gitattributes      # UTF-8 BOM + CRLF rules for .pas / .dfm / .fmx
+```
+
+More material (slides, prompt library, workflow kit, in-app AI features) is added as the workshop progresses; folders show up here when their content is ready.
+
+### `Instructions/` — agent rules
+
+The two files in `Instructions/` are the rule set we hand every coding agent during the workshop. They are intentionally short and copy-paste-friendly so attendees can adapt them for their own Delphi repos.
+
+- [`Instructions/CLAUDE.md`](Instructions/CLAUDE.md) — the **universal** rules: project-start questions (language, tests, license), DRY/SoC, comment policy, and a Delphi quick-reference table.
+- [`Instructions/Delphi.md`](Instructions/Delphi.md) — the **canonical** Delphi standards: file encoding, naming conventions, scoped enums, project layout, build & output paths, version info, mandatory unit headers, and a section on counting LOC for Delphi projects.
+
+These files are the same set of rules used to build the demo below, so reading them is the cleanest way to understand the conventions every commit follows.
+
+### `DX.DateChanger/` — Day 1 live-build demo
+
+A small but real Delphi 12 / FireMonkey desktop tool for **Windows and macOS**. Drag a file whose name starts with `YYYY-MM-DD` onto the window and the tool sets the file's creation, modification, and access timestamps to that date at 10:00 local time. Files that don't match are silently ignored. Minimalist GUI: one drop zone, one explanatory label, no menus.
+
+It exists both as a useful utility *and* as a teaching artefact — every step of the build is preserved as PRD, plan, commits, and tests, so the full agentic-development workflow is reproducible end-to-end.
 
 ```
-2026-04/    # this edition
+DX.DateChanger/
+├── DX.DateChanger.dproj / .dpr      # Main FMX app (Win32 / Win64 / OSXARM64)
+├── src/
+│   ├── DX.DateChanger.Parser.pas    # Pure: filename → TDate (calendar-validated)
+│   ├── DX.DateChanger.FileTime.pas  # IFileTimeSetter + Win32 + macOS impls ($IFDEF)
+│   ├── DX.DateChanger.Service.pas   # Orchestrator: walks paths, delegates writes
+│   └── FormMain.pas / .fmx          # Thin FMX shell — just wires drops to the service
+├── tests/                           # DUnitX, 32 tests (parser + service + smoke)
+├── libs/DUnitX/                     # Submodule (VSoftTechnologies/DUnitX)
+├── build/DelphiBuildDPROJ.ps1       # Universal Delphi build script (omonien/DelphiStandards)
+└── docs/
+    ├── 2026-04-28-dx-datechanger-prd.md     # Full product requirements
+    ├── 2026-04-28-dx-datechanger-plan.md    # Bite-sized TDD implementation plan
+    └── Initial Idea.md                       # The original brief that started everything
 ```
 
-Inside each edition folder you can expect to find:
-
-- **Agenda and slides** — the schedule and presentation material
-- **Conventions** — Delphi project, build, and Git rules used throughout
-- **Agent rules** — the instruction files we hand to coding agents (Clean Code, naming, headers, build paths, version info)
-- **The shared project** — the Delphi codebase built live during the hands-on blocks
-- **Prompt library** — reusable prompt templates collected during the workshop
-- **Workflow kit** — review checklists, AI safety rules, repo conventions, model/tool selection matrix
-- **AI features** — the in-app AI features built on Day 2
-- **Production checklist** — security, latency, cost, observability, testing, and rollout notes
-
-A detailed index of files will be added here once the workshop wraps up.
+Read the [PRD](DX.DateChanger/docs/2026-04-28-dx-datechanger-prd.md) for the design, the [implementation plan](DX.DateChanger/docs/2026-04-28-dx-datechanger-plan.md) for the task-by-task build order, and the Git log for how the agentic workflow actually unfolded.
 
 ---
 
@@ -72,9 +101,11 @@ You don't need to have attended to use this repo. To work through the hands-on p
 Then:
 
 ```bash
-git clone https://github.com/omonien/DAPUG-2026.git
+git clone --recurse-submodules https://github.com/omonien/DAPUG-2026.git
 cd DAPUG-2026
 ```
+
+`--recurse-submodules` fetches DUnitX into `DX.DateChanger/libs/DUnitX/` so the demo's test project compiles. If you cloned without it, run `git submodule update --init` afterwards.
 
 ---
 
