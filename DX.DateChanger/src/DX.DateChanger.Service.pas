@@ -80,7 +80,7 @@ begin
   LDir := TPath.Combine(TPath.GetHomePath, 'DX.DateChanger');
 {$ENDIF}
 {$IFDEF MACOS}
-  LDir := TPath.Combine(TPath.GetLibraryPath, 'Application Support\DX.DateChanger');
+  LDir := TPath.Combine(TPath.Combine(TPath.GetLibraryPath, 'Application Support'), 'DX.DateChanger');
 {$ENDIF}
   TDirectory.CreateDirectory(LDir);
   FLogPath := TPath.Combine(LDir, 'errors.log');
