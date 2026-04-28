@@ -181,6 +181,7 @@ uses
   {$ELSE}
   DUnitX.Loggers.Console,
   {$ENDIF }
+  DUnitX.Exceptions,
   DUnitX.TestFramework;
 
 {$IFNDEF TESTINSIGHT}
@@ -203,12 +204,21 @@ begin
     LRunner.AddLogger(LLogger);
     LResults := LRunner.Execute;
     if not LResults.AllPassed then
-      System.ExitCode := EXITCODE_FAILED_BUT_NO_ASSERTS;
+      System.ExitCode := EXIT_ERRORS;
     {$IFNDEF CI}
     System.Write('Done.. press <Enter> key to quit.');
     System.Readln;
     {$ENDIF}
   except
+    // Transient: DUnitX raises ENoTestsRegistered when no fixtures exist
+    // (verified in DUnitX.TestRunner.pas). Once fixtures are registered
+    // in Task 3 this branch becomes unreachable and should be removed.
+    on E: ENoTestsRegistered do
+    begin
+      System.Writeln('Tests Found        : 0');
+      System.Writeln('Tests Passed       : 0');
+      System.ExitCode := EXIT_OK;
+    end;
     on E: Exception do
       System.Writeln(E.ClassName, ': ', E.Message);
   end;
@@ -244,10 +254,10 @@ Done.. press <Enter> key to quit.
 .\DX.DateChanger\build\DelphiBuildDPROJ.ps1 `
     -ProjectFile .\DX.DateChanger\tests\DX.DateChangerTests.dproj `
     -Platform Win64 -Config Debug
-.\DX.DateChanger\build\Win64\Debug\DX.DateChangerTests.exe -exit
+.\DX.DateChanger\build\Win64\Debug\DX.DateChangerTests.exe --exitbehavior:Continue
 ```
 
-Expected: same "0 tests" output as Step 3 (the `-exit` arg suppresses the Enter prompt).
+Expected: same "0 tests" output as Step 3 (the `--exitbehavior:Continue` arg suppresses the Enter prompt).
 
 - [ ] **Step 5: Commit**
 
@@ -265,8 +275,21 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 
 **Files:**
 - Create: `DX.DateChanger/tests/DX.DateChanger.Parser.Tests.pas`
-- Modify: `DX.DateChanger/tests/DX.DateChangerTests.dpr` (add to `uses`)
+- Modify: `DX.DateChanger/tests/DX.DateChangerTests.dpr` (add to `uses`; remove transient `ENoTestsRegistered` catch)
 - Create: `DX.DateChanger/src/DX.DateChanger.Parser.pas`
+
+- [ ] **Step 0: Remove the Task 2 transient `ENoTestsRegistered` catch from `DX.DateChangerTests.dpr`**
+
+The catch was added in Task 2 to print "0 tests" cleanly when no fixtures existed. Now that real fixtures will be registered, the catch becomes dead code. Reduce the `except` block back to:
+
+```pascal
+  except
+    on E: Exception do
+      System.Writeln(E.ClassName, ': ', E.Message);
+  end;
+```
+
+Also remove the now-unused `DUnitX.Exceptions` from the `uses` clause.
 
 - [ ] **Step 1: Write the failing test unit**
 
@@ -515,7 +538,7 @@ The path is already configured (`..\src` was added to Search path in Task 2). No
 
 ```powershell
 .\DX.DateChanger\build\DelphiBuildDPROJ.ps1 -ProjectFile .\DX.DateChanger\tests\DX.DateChangerTests.dproj -Platform Win64 -Config Debug
-.\DX.DateChanger\build\Win64\Debug\DX.DateChangerTests.exe -exit
+.\DX.DateChanger\build\Win64\Debug\DX.DateChangerTests.exe --exitbehavior:Continue
 ```
 
 Expected output (counts will match the test cases above):
@@ -1111,7 +1134,7 @@ Final `uses` layout:
 
 ```powershell
 .\DX.DateChanger\build\DelphiBuildDPROJ.ps1 -ProjectFile .\DX.DateChanger\tests\DX.DateChangerTests.dproj -Platform Win64 -Config Debug
-.\DX.DateChanger\build\Win64\Debug\DX.DateChangerTests.exe -exit
+.\DX.DateChanger\build\Win64\Debug\DX.DateChangerTests.exe --exitbehavior:Continue
 ```
 
 Expected: all parser tests + all service tests pass (≈ 32 tests total). If any fail, fix the service logic before continuing.
@@ -1219,7 +1242,7 @@ Also add the file via Delphi IDE Project Manager → `Add...`.
 
 ```powershell
 .\DX.DateChanger\build\DelphiBuildDPROJ.ps1 -ProjectFile .\DX.DateChanger\tests\DX.DateChangerTests.dproj -Platform Win64 -Config Debug
-.\DX.DateChanger\build\Win64\Debug\DX.DateChangerTests.exe -exit
+.\DX.DateChanger\build\Win64\Debug\DX.DateChangerTests.exe --exitbehavior:Continue
 ```
 
 Expected: smoke test errors with `ENotImplemented: CreateFileTimeSetter: no implementation yet`.
@@ -1321,7 +1344,7 @@ end.
 
 ```powershell
 .\DX.DateChanger\build\DelphiBuildDPROJ.ps1 -ProjectFile .\DX.DateChanger\tests\DX.DateChangerTests.dproj -Platform Win64 -Config Debug
-.\DX.DateChanger\build\Win64\Debug\DX.DateChangerTests.exe -exit
+.\DX.DateChanger\build\Win64\Debug\DX.DateChangerTests.exe --exitbehavior:Continue
 ```
 
 Expected: all tests pass, including `SetTimes_Roundtrip_TimestampsMatchWithinOneSecond`.
@@ -1756,7 +1779,7 @@ Mac (from Delphi IDE with PAServer connected):
 - [ ] **Step 2: Run full DUnitX suite on Windows**
 
 ```powershell
-.\DX.DateChanger\build\Win64\Debug\DX.DateChangerTests.exe -exit
+.\DX.DateChanger\build\Win64\Debug\DX.DateChangerTests.exe --exitbehavior:Continue
 ```
 
 Expected: all tests pass (≈ 33 tests: 22 parser + 10 service + 1 file-time smoke).

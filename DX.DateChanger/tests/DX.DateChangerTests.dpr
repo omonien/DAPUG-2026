@@ -41,6 +41,9 @@ begin
     System.Readln;
     {$ENDIF}
   except
+    // Transient: DUnitX raises ENoTestsRegistered when no fixtures exist
+    // (verified in DUnitX.TestRunner.pas). Once fixtures are registered
+    // in later tasks this branch becomes unreachable and should be removed.
     on E: ENoTestsRegistered do
     begin
       System.Writeln('Tests Found        : 0');
