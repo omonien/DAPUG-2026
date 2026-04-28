@@ -103,6 +103,12 @@ type
   TOrderStatus = (osCreated, osConfirmed, osShipped);  // unscoped + prefix
 ```
 
+### 2.3 Form Design — Prefer DFM/FMX
+
+Forms for VCL and FireMonkey applications MUST be designed via `.dfm` / `.fmx` files in the IDE designer. Manipulating form elements in source code is only permitted for **dynamic content** (e.g. variable-length lists, data-driven controls).
+
+**Rationale:** Creating forms entirely in source bypasses the DFM/FMX scaling system and regularly causes layout and scaling problems under HighDPI.
+
 ## 3. Project Layout
 
 ```
@@ -275,3 +281,44 @@ Delphi installs at `C:\Program Files (x86)\Embarcadero\Studio\<version>\`:
 `rsvars.bat` is at `<install>\bin\rsvars.bat`.
 
 `DelphiBuildDPROJ.ps1` wraps `rsvars.bat` + `msbuild` — direct invocation is normally not needed.
+
+## 11. Lines of Code — Counting Rule
+
+When asked for the LOC of a Delphi project, report **application code** and **test code** separately, and report both **total LOC** (`wc -l`) and **effective LOC** (excluding blank lines and comments).
+
+### Files counted
+
+| Bucket | Files |
+|---|---|
+| Application | `src/**/*.pas`, `src/**/*.fmx`, `*.dpr` at project root |
+| Tests | `tests/**/*.pas`, `tests/**/*.dpr` |
+
+### Files NOT counted
+
+- `.dproj` (MSBuild XML config — generated, not source)
+- `.res`, `.dcu`, `.exe`, `.app` (binaries)
+- `libs/**` (third-party / submodules — DUnitX, etc.)
+- `build/**` (output dir, build scripts)
+- `docs/**` (markdown, PRDs, plans)
+- IDE local files (`*.local`, `*.dsk`, `__history/`, `__recovery/`)
+
+### Effective-LOC stripper (bash awk)
+
+Strips blank lines, `//` line comments, and `{ ... }` block comments (the standard XML doc header form). `(* ... *)` block comments aren't stripped — Delphi 12 codebases under these rules don't use them.
+
+```bash
+code_only() {
+  awk '
+    /^\s*$/ { next }
+    /^\s*\/\// { next }
+    /^\s*{[^$]/ { in_brace = 1 }
+    in_brace && /}/ { in_brace = 0; next }
+    in_brace { next }
+    { print }
+  ' "$1" | wc -l
+}
+```
+
+### Standard report shape
+
+Two tables (per-bucket totals + per-file breakdown), plus the **tests-to-app ratio** (effective LOC). A healthy ratio for a test-first project sits around 0.7–1.2:1; the Service test files typically dominate due to mocks + parametric coverage.

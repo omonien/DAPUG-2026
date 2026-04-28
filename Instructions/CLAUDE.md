@@ -38,6 +38,7 @@ Before starting work on a new project, the agent MUST clarify these points with 
 | Encoding | `.pas` UTF-8 BOM · `.dfm`/`.fmx` `#<codepoint>` · CRLF everywhere |
 | Naming | PascalCase · classes `T`, interfaces `I`, exceptions `E` · local `L`, fields `F`, parameters `A` · constants `c`/`sc`/`rs` |
 | Enums | Scoped (`{$SCOPEDENUMS ON}`), no prefix |
+| Form design | DFM/FMX designer · code-based creation only for dynamic content (HighDPI) |
 | Project layout | `src/` `demo/` `tests/` `build/` `docs/` `libs/` |
 | Output/DCU/DCP | `/build/$(platform)/$(config)[/dcu]` |
 | IDE packages | Exception: BPL/DCP under `$(BDSCOMMONDIR)\Bpl` / `\Dcp` |
