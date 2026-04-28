@@ -89,6 +89,8 @@
         <DCCReference Include="IUS.Tests.Storage.pas"/>
         <DCCReference Include="..\src\IUS.JobQueue.pas"/>
         <DCCReference Include="IUS.Tests.JobQueue.pas"/>
+        <DCCReference Include="..\src\IUS.Config.pas"/>
+        <DCCReference Include="IUS.Tests.Config.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
