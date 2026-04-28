@@ -48,6 +48,10 @@ uses
 {$IFDEF MSWINDOWS}
   Winapi.Windows,
 {$ENDIF}
+{$IFDEF MACOS}
+  Macapi.Foundation, Macapi.ObjectiveC, Macapi.Helpers,
+  Posix.SysTime, Posix.Errno,
+{$ENDIF}
   System.DateUtils;
 
 constructor EFileTimeError.Create(const AMessage: string; AOSErrorCode: Integer);
@@ -97,12 +101,69 @@ begin
 end;
 {$ENDIF}
 
+{$IFDEF MACOS}
+type
+  /// <summary>
+  ///   macOS implementation of IFileTimeSetter. Sets creation and modification
+  ///   timestamps via NSFileManager.setAttributes and access time via POSIX utimes.
+  /// </summary>
+  TMacFileTimeSetter = class(TInterfacedObject, IFileTimeSetter)
+  public
+    procedure SetTimes(const APath: string; const AWhen: TDateTime);
+  end;
+
+procedure TMacFileTimeSetter.SetTimes(const APath: string; const AWhen: TDateTime);
+var
+  LMgr: NSFileManager;
+  LAttrs: NSMutableDictionary;
+  LDate: NSDate;
+  LWhenUtc: TDateTime;
+  LIntervalSince1970: Double;
+  LNSPath: NSString;
+  LErrorPtr: Pointer;
+  LTimes: array[0..1] of timeval;
+  LCPath: MarshaledAString;
+  LRC: Integer;
+begin
+  LWhenUtc := TTimeZone.Local.ToUniversalTime(AWhen);
+  // NSDate uses seconds since 1970-01-01 00:00:00 UTC
+  LIntervalSince1970 := (LWhenUtc - EncodeDate(1970, 1, 1)) * SecsPerDay;
+  LDate := TNSDate.Wrap(TNSDate.OCClass.dateWithTimeIntervalSince1970(LIntervalSince1970));
+
+  LAttrs := TNSMutableDictionary.Create;
+  try
+    // Use NSFileCreationDate / NSFileModificationDate constants as keys
+    LAttrs.setValue(NSObjectToID(LDate), NSFileCreationDate);
+    LAttrs.setValue(NSObjectToID(LDate), NSFileModificationDate);
+
+    LMgr := TNSFileManager.Wrap(TNSFileManager.OCClass.defaultManager);
+    LNSPath := StrToNSStr(APath);
+    LErrorPtr := nil;
+    if not LMgr.setAttributes(LAttrs, LNSPath, @LErrorPtr) then
+      raise EFileTimeError.Create('NSFileManager.setAttributes failed', EACCES);
+
+    // Set access time via POSIX utimes (NSFileManager does not expose atime).
+    LCPath := MarshaledAString(UTF8String(APath));
+    LTimes[0].tv_sec  := Trunc(LIntervalSince1970);
+    LTimes[0].tv_usec := 0;
+    LTimes[1] := LTimes[0];  // mtime mirror (already set above; belt-and-suspenders)
+    LRC := utimes(LCPath, @LTimes[0]);
+    if LRC <> 0 then
+      raise EFileTimeError.Create('utimes failed', errno);
+  finally
+    LAttrs.release;
+  end;
+end;
+{$ENDIF}
+
 function CreateFileTimeSetter: IFileTimeSetter;
 begin
 {$IFDEF MSWINDOWS}
   Result := TWinFileTimeSetter.Create;
+{$ELSEIF Defined(MACOS)}
+  Result := TMacFileTimeSetter.Create;
 {$ELSE}
-  raise ENotImplemented.Create('CreateFileTimeSetter: macOS impl pending (Task 6)');
+  raise ENotImplemented.Create('No IFileTimeSetter for this platform');
 {$ENDIF}
 end;
 
