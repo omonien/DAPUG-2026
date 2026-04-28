@@ -52,7 +52,7 @@
         <SanitizedProjectName>ImageUpscaleService_Tests</SanitizedProjectName>
         <DCC_DcuOutput>..\build\$(Platform)\$(Config)\dcu</DCC_DcuOutput>
         <DCC_ExeOutput>..\build\$(Platform)\$(Config)</DCC_ExeOutput>
-        <DCC_UnitSearchPath>..\src;..\libs\DUnitX\Source;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <DCC_UnitSearchPath>..\src;..\libs\DUnitX\Source;..\libs\DelphiGemini\source;..\libs\Horse\src;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <Icns_MainIcns>$(BDS)\bin\delphi_PROJECTICNS.icns</Icns_MainIcns>
         <Icon_MainIcon>$(BDS)\bin\delphi_PROJECTICON.ico</Icon_MainIcon>
     </PropertyGroup>
@@ -92,6 +92,7 @@
         <DCCReference Include="..\src\IUS.Config.pas"/>
         <DCCReference Include="IUS.Tests.Config.pas"/>
         <DCCReference Include="..\src\IUS.Upscaler.Native.pas"/>
+        <DCCReference Include="..\src\IUS.Upscaler.DelphiGemini.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
