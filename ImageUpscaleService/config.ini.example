@@ -1,0 +1,21 @@
+; ImageUpscaleService configuration template.
+; Copy this file to config.ini and fill in your Gemini API key.
+; config.ini is gitignored. Never commit it.
+
+[Server]
+Port=8080
+
+[Gemini]
+; Get an API key at https://aistudio.google.com/app/apikey
+ApiKey=AIza-your-key-here
+Model=gemini-3-pro-image-preview
+
+[Upscaler]
+; native       = raw HTTPS via TNetHTTPClient (no third-party deps)
+; delphigemini = wrapper around MaxiDonkey/DelphiGemini library
+Provider=native
+
+[Storage]
+UploadDir=./var/uploads
+ResultDir=./var/results
+RetentionMinutes=30

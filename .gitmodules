@@ -1,3 +1,6 @@
 [submodule "DX.DateChanger/libs/DUnitX"]
 	path = DX.DateChanger/libs/DUnitX
 	url = https://github.com/VSoftTechnologies/DUnitX.git
+[submodule "ImageUpscaleService/libs/DUnitX"]
+	path = ImageUpscaleService/libs/DUnitX
+	url = https://github.com/VSoftTechnologies/DUnitX.git

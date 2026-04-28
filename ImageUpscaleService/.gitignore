@@ -1,0 +1,17 @@
+# Build output (binaries + DCUs land here; keep the dir, drop the contents)
+build/Win32/
+build/Win64/
+build/Linux64/
+
+# Delphi local artefacts
+*.identcache
+*.local
+*.dsk
+*.tvsconfig
+__history/
+__recovery/
+*.~*
+
+# Runtime config (contains the API key) and runtime storage
+config.ini
+var/
