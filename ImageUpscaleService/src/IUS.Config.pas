@@ -32,9 +32,12 @@ implementation
 
 function LoadConfig(const APath: string): TConfig;
 var
-  LIni: TIniFile;
+  LIni: TMemIniFile;
 begin
-  LIni := TIniFile.Create(APath);
+  // Use TMemIniFile (Delphi-native parser) rather than TIniFile (Win32
+  // GetPrivateProfileString), which mishandles relative paths and requires
+  // strict CRLF line endings on Windows.
+  LIni := TMemIniFile.Create(APath, TEncoding.UTF8);
   try
     Result.Port := LIni.ReadInteger('Server', 'Port', 8080);
 

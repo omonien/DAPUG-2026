@@ -59,7 +59,7 @@ var
   LClient: IGemini;
   LChat: TChat;
   LCandidate: TChatCandidate;
-  LPart: TChatContentPart;
+  LPart: TChatPart;
   LBase64: string;
   LResolutionStr: string;
 begin
