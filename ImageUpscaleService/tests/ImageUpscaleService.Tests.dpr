@@ -12,6 +12,7 @@ uses
   DUnitX.Loggers.Console,
   DUnitX.Loggers.Xml.NUnit,
   {$ENDIF }
+  IUS.Tests.Prompt in 'IUS.Tests.Prompt.pas',
   DUnitX.TestFramework;
 
 {$IFDEF TESTINSIGHT}
