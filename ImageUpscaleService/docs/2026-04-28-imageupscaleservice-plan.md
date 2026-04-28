@@ -57,6 +57,7 @@ ImageUpscaleService/
 │   └── IUS.Tests.Smoke.pas                          (Task 18)
 ├── libs/
 │   ├── DUnitX/                                      (Task 1, git submodule)
+│   ├── Horse/                                       (Task 2, git submodule)
 │   └── DelphiGemini/                                (Task 2, git submodule)
 ├── build/                                           (gitignored output)
 │   └── DelphiBuildDPROJ.ps1                         (Task 1)
@@ -190,36 +191,52 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 2: Add MaxiDonkey/DelphiGemini submodule
+## Task 2: Add Horse and MaxiDonkey/DelphiGemini submodules
+
+Both third-party libraries are vendored as git submodules so the project
+builds without GetIt or Boss. Source paths are added to the project's
+search path in Task 4.
 
 **Files:**
+- Create: `ImageUpscaleService/libs/Horse/` (via git submodule)
 - Create: `ImageUpscaleService/libs/DelphiGemini/` (via git submodule)
 
-- [ ] **Step 1: Add the library as a git submodule**
+- [ ] **Step 1: Add Horse as a git submodule**
+
+```bash
+git submodule add https://github.com/HashLoad/horse.git ImageUpscaleService/libs/Horse
+```
+
+Expected: `Cloning into 'ImageUpscaleService/libs/Horse'...` and `.gitmodules`
+is updated. Horse has no third-party Delphi dependencies (it uses Indy,
+which ships with Delphi).
+
+- [ ] **Step 2: Add MaxiDonkey/DelphiGemini as a git submodule**
 
 ```bash
 git submodule add https://github.com/MaxiDonkey/DelphiGemini.git ImageUpscaleService/libs/DelphiGemini
 ```
 
-Expected: `Cloning into 'ImageUpscaleService/libs/DelphiGemini'...` and `.gitmodules` is updated.
-
-- [ ] **Step 2: Verify**
+- [ ] **Step 3: Verify both have source files**
 
 ```bash
 git status
+ls ImageUpscaleService/libs/Horse/src/
 ls ImageUpscaleService/libs/DelphiGemini/source/
 ```
 
-Expected: see the library's source units (`Gemini.pas`, etc.).
+Expected: Horse shows units like `Horse.pas`, `Horse.Core.pas`. DelphiGemini
+shows `Gemini.pas` (or similar facade unit).
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
-git add .gitmodules ImageUpscaleService/libs/DelphiGemini
-git commit -m "chore(imageupscaleservice): add MaxiDonkey/DelphiGemini submodule
+git add .gitmodules ImageUpscaleService/libs/Horse ImageUpscaleService/libs/DelphiGemini
+git commit -m "chore(imageupscaleservice): add Horse and DelphiGemini as git submodules
 
-Pinned community Gemini wrapper; used by the optional 'delphigemini'
-upscaler implementation alongside the raw-HTTPS native one.
+Both vendored as submodules instead of GetIt/Boss to keep the workshop
+clone-and-build workflow zero-friction. Horse is HashLoad/horse; the
+Gemini wrapper is MaxiDonkey/DelphiGemini.
 
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ```
@@ -327,8 +344,6 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 
 **Goal:** A console `.exe` that loads Horse and prints a one-line startup banner. No routes yet.
 
-**Pre-step:** The MaxiDonkey/DelphiGemini library has no Horse dependency, but Horse itself must be installed via Boss or GetIt before this task can compile. Recommended: **GetIt → Horse**, which installs Horse + dependencies into the IDE library path.
-
 **Files:**
 - Create: `ImageUpscaleService/ImageUpscaleService.dproj`
 - Create: `ImageUpscaleService/ImageUpscaleService.dpr`
@@ -337,9 +352,9 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 
 In Delphi: **File → New → Other → Console Application**. Save as `ImageUpscaleService/ImageUpscaleService.dproj`.
 
-Project Options (mirror Task 3, but with `..\libs\DelphiGemini\source` also on the search path):
+Project Options (mirror Task 3, but with both vendored library source folders on the search path):
 - Output: `build\$(Platform)\$(Config)`, DCU: `build\$(Platform)\$(Config)\dcu`.
-- Search path: `src;libs\DelphiGemini\source`.
+- Search path: `src;libs\Horse\src;libs\DelphiGemini\source`.
 - Targets: `Win64` primary, `Linux64` secondary.
 - VersionInfo: copyright `Olaf Monien`, version `1.0.0.0`.
 
