@@ -2,7 +2,7 @@
 build/Win32/
 build/Win64/
 build/OSX64/
-build/OSX64ARM/
+build/OSXARM64/
 
 # Delphi local artefacts
 *.identcache

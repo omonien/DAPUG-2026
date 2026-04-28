@@ -6,7 +6,7 @@
 
 **Architecture:** Three-layer Delphi project. Pure parser unit (no I/O), file-time setter behind an `IFileTimeSetter` interface with one Windows and one macOS implementation, and an orchestrator service that ties them together. The FMX form is a thin shell that wires drop events to the service. DUnitX as a Git submodule for tests; mock `IFileTimeSetter` makes the service unit-testable without touching the file system.
 
-**Tech Stack:** Delphi 12 Athens · FireMonkey (FMX) · Win32/Win64/OSX64ARM targets · DUnitX (submodule) · MIT licensed.
+**Tech Stack:** Delphi 12 Athens · FireMonkey (FMX) · Win32/Win64/OSXARM64 targets · DUnitX (submodule) · MIT licensed.
 
 **Reference:** This plan implements the design in [`DX.DateChanger/docs/2026-04-28-dx-datechanger-prd.md`](2026-04-28-dx-datechanger-prd.md). Read it first if anything below is unclear.
 
@@ -104,7 +104,7 @@ Create `DX.DateChanger/.gitignore` with this content:
 build/Win32/
 build/Win64/
 build/OSX64/
-build/OSX64ARM/
+build/OSXARM64/
 
 # Delphi local artefacts
 *.identcache
@@ -158,7 +158,7 @@ In **Project > Options**:
 - **Building > Delphi Compiler > Output directory**: `..\build\$(Platform)\$(Config)`
 - **Building > Delphi Compiler > Unit output directory**: `..\build\$(Platform)\$(Config)\dcu`
 - **Building > Delphi Compiler > Search path**: add `..\src;..\libs\DUnitX\Source`
-- **Description > Application > Target platforms**: enable **Win64** (and **OSX64ARM** if developing on macOS).
+- **Description > Application > Target platforms**: enable **Win64** (and **OSXARM64** if developing on macOS).
 
 Save and close project options.
 
@@ -1365,21 +1365,17 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 
 ## Task 6: macOS file-time implementation
 
-**Prerequisite:** access to a Mac with Delphi or PAServer pointing at one. If you only have Windows for now, you can skip the *runtime* verification of this task and only do the compile check (with `OSX64ARM` enabled in Project Options).
+**Prerequisite:** access to a Mac with Delphi or PAServer pointing at one. If you only have Windows for now, you can skip the *runtime* verification of this task and only do the compile check (with `OSXARM64` enabled in Project Options).
 
 **Files:**
 - Modify: `DX.DateChanger/src/DX.DateChanger.FileTime.pas` (add `TMacFileTimeSetter`)
 
 - [ ] **Step 1: Add the macOS implementation**
 
-In `DX.DateChanger/src/DX.DateChanger.FileTime.pas`, between the Windows `{$ENDIF}` and the `CreateFileTimeSetter` factory, add:
+Add `Macapi.Foundation, Macapi.ObjectiveC, Macapi.Helpers, Posix.SysTime, Posix.Errno` to the existing implementation `uses` clause behind `{$IFDEF MACOS}`. Then, between the Windows `{$ENDIF}` and the `CreateFileTimeSetter` factory, add:
 
 ```pascal
 {$IFDEF MACOS}
-uses
-  Macapi.Foundation, Macapi.ObjectiveC, Macapi.CoreFoundation,
-  Posix.SysTime, Posix.Errno;
-
 type
   TMacFileTimeSetter = class(TInterfacedObject, IFileTimeSetter)
   public
@@ -1394,7 +1390,7 @@ var
   LWhenUtc: TDateTime;
   LIntervalSince1970: Double;
   LNSPath: NSString;
-  LError: NSError;
+  LErrorPtr: Pointer;
   LTimes: array[0..1] of timeval;
   LCPath: MarshaledAString;
   LRC: Integer;
@@ -1406,24 +1402,21 @@ begin
 
   LAttrs := TNSMutableDictionary.Create;
   try
-    LAttrs.setObject(NSObjectToID(LDate), NSObjectToID(StrToNSStr('NSFileCreationDate')));
-    LAttrs.setObject(NSObjectToID(LDate), NSObjectToID(StrToNSStr('NSFileModificationDate')));
+    LAttrs.setValue(NSObjectToID(LDate), NSFileCreationDate);
+    LAttrs.setValue(NSObjectToID(LDate), NSFileModificationDate);
 
     LMgr := TNSFileManager.Wrap(TNSFileManager.OCClass.defaultManager);
     LNSPath := StrToNSStr(APath);
-    LError := nil;
-    if not LMgr.setAttributes(LAttrs, LNSPath, @LError) then
-    begin
-      // NSError code is best-effort; map to errno EACCES when meaningful.
+    LErrorPtr := nil;
+    if not LMgr.setAttributes(LAttrs, LNSPath, @LErrorPtr) then
       raise EFileTimeError.Create('NSFileManager.setAttributes failed', EACCES);
-    end;
 
     // Touch atime via utimes (NSFileManager does not expose access time).
     LCPath := MarshaledAString(UTF8String(APath));
-    LTimes[0].tv_sec := Trunc(LIntervalSince1970);
+    LTimes[0].tv_sec  := Trunc(LIntervalSince1970);
     LTimes[0].tv_usec := 0;
     LTimes[1] := LTimes[0];
-    LRC := utimes(LCPath, LTimes[0]);
+    LRC := utimes(LCPath, @LTimes[0]);
     if LRC <> 0 then
       raise EFileTimeError.Create('utimes failed', errno);
   finally
@@ -1494,7 +1487,7 @@ In **Project > Options**:
 - **Building > Delphi Compiler > Output directory**: `build\$(Platform)\$(Config)`
 - **Building > Delphi Compiler > Unit output directory**: `build\$(Platform)\$(Config)\dcu`
 - **Building > Delphi Compiler > Search path**: add `src`
-- **Description > Application > Target platforms**: `Win32`, `Win64`, `OSX64ARM`
+- **Description > Application > Target platforms**: `Win32`, `Win64`, `OSXARM64`
 - **Application > Version Info**: tick `Include version information in project`. Set version to `1.0.0.0`. Copyright `Olaf Monien`.
 
 - [ ] **Step 2: Replace `FormMain.fmx` with the layout**
@@ -1772,7 +1765,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ```
 
 Mac (from Delphi IDE with PAServer connected):
-- Switch active platform to `OSX64ARM`.
+- Switch active platform to `OSXARM64`.
 - Build the test project — expect 0 errors.
 - Build the main project — expect 0 errors.
 
