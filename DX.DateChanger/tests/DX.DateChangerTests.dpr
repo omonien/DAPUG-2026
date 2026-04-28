@@ -12,8 +12,9 @@ uses
   {$ELSE}
   DUnitX.Loggers.Console,
   {$ENDIF }
-  DUnitX.Exceptions,
-  DUnitX.TestFramework;
+  DUnitX.TestFramework,
+  DX.DateChanger.Parser in '..\src\DX.DateChanger.Parser.pas',
+  DX.DateChanger.Parser.Tests in 'DX.DateChanger.Parser.Tests.pas';
 
 {$IFNDEF TESTINSIGHT}
 var
@@ -41,15 +42,6 @@ begin
     System.Readln;
     {$ENDIF}
   except
-    // Transient: DUnitX raises ENoTestsRegistered when no fixtures exist
-    // (verified in DUnitX.TestRunner.pas). Once fixtures are registered
-    // in later tasks this branch becomes unreachable and should be removed.
-    on E: ENoTestsRegistered do
-    begin
-      System.Writeln('Tests Found        : 0');
-      System.Writeln('Tests Passed       : 0');
-      System.ExitCode := EXIT_OK;
-    end;
     on E: Exception do
       System.Writeln(E.ClassName, ': ', E.Message);
   end;

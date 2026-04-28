@@ -78,6 +78,8 @@
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
+        <DCCReference Include="..\src\DX.DateChanger.Parser.pas"/>
+        <DCCReference Include="DX.DateChanger.Parser.Tests.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
