@@ -70,12 +70,13 @@ Per `Delphi.md` in the user's global rules:
 
 ---
 
-## Task 1: Add DUnitX submodule and .gitignore
+## Task 1: Add DUnitX submodule, build script, and .gitignore
 
 **Files:**
 - Create: `DX.DateChanger/.gitignore`
 - Create: `DX.DateChanger/libs/DUnitX/` (via git submodule)
-- Create: `DX.DateChanger/build/.gitkeep` (placeholder so the dir exists)
+- Copy:   `DX.DateChanger/build/DelphiBuildDPROJ.ps1` (universal Delphi build script from `omonien/DelphiStandards`; copy from `C:\Projekte\DX.Editor\build\DelphiBuildDPROJ.ps1` or any other project that already has it)
+- Create: `DX.DateChanger/build/.gitkeep` (so the otherwise empty/gitignored dir keeps the build script tracked)
 
 - [ ] **Step 1: Add DUnitX as a git submodule**
 
@@ -87,14 +88,23 @@ git submodule add https://github.com/VSoftTechnologies/DUnitX.git DX.DateChanger
 
 Expected: `Cloning into 'DX.DateChanger/libs/DUnitX'...` and a new `.gitmodules` file created at the repo root.
 
-- [ ] **Step 2: Create the project-local .gitignore**
+- [ ] **Step 2: Copy the universal build script**
+
+```bash
+mkdir -p DX.DateChanger/build
+cp /c/Projekte/DX.Editor/build/DelphiBuildDPROJ.ps1 DX.DateChanger/build/DelphiBuildDPROJ.ps1
+```
+
+- [ ] **Step 3: Create the project-local .gitignore**
 
 Create `DX.DateChanger/.gitignore` with this content:
 
 ```gitignore
-# Build output
-build/*
-!build/.gitkeep
+# Build output (binaries + DCUs land here; keep the dir, drop the contents)
+build/Win32/
+build/Win64/
+build/OSX64/
+build/OSX64ARM/
 
 # Delphi local artefacts
 *.identcache
@@ -106,26 +116,19 @@ __recovery/
 *.~*
 ```
 
-- [ ] **Step 3: Create the build/ placeholder**
-
-```bash
-mkdir -p DX.DateChanger/build
-touch DX.DateChanger/build/.gitkeep
-```
-
 - [ ] **Step 4: Verify**
 
 ```bash
 git status
 ```
 
-Expected: shows `.gitmodules`, `DX.DateChanger/.gitignore`, `DX.DateChanger/build/.gitkeep`, and the new submodule entry as untracked/staged.
+Expected: shows `.gitmodules`, `DX.DateChanger/.gitignore`, `DX.DateChanger/build/DelphiBuildDPROJ.ps1`, and the new submodule entry as untracked/staged.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add .gitmodules DX.DateChanger/.gitignore DX.DateChanger/build/.gitkeep DX.DateChanger/libs/DUnitX
-git commit -m "chore(dx.datechanger): add DUnitX submodule and project gitignore
+git add .gitmodules DX.DateChanger/.gitignore DX.DateChanger/build/DelphiBuildDPROJ.ps1 DX.DateChanger/libs/DUnitX
+git commit -m "chore(dx.datechanger): add DUnitX submodule, build script, and gitignore
 
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ```
@@ -233,49 +236,24 @@ Tests Errored      : 0
 Done.. press <Enter> key to quit.
 ```
 
-- [ ] **Step 4: Define the CI build helper script**
+- [ ] **Step 4: Run from CLI to verify the build script works**
 
-Create `DX.DateChanger/build/build.ps1` with:
-
-```powershell
-param(
-    [ValidateSet('Win64','Win32','OSX64ARM')]
-    [string]$Platform = 'Win64',
-    [ValidateSet('Debug','Release')]
-    [string]$Config = 'Debug',
-    [ValidateSet('Main','Tests')]
-    [string]$Target = 'Tests'
-)
-$ErrorActionPreference = 'Stop'
-$root = Split-Path -Parent $PSScriptRoot
-$proj = if ($Target -eq 'Tests') {
-    Join-Path $root 'tests\DX.DateChangerTests.dproj'
-} else {
-    Join-Path $root 'DX.DateChanger.dproj'
-}
-& msbuild $proj /p:Platform=$Platform /p:Config=$Config /t:Build
-if ($LASTEXITCODE -ne 0) { throw "Build failed: $LASTEXITCODE" }
-```
-
-This is a thin wrapper. Use the official `omonien/DelphiStandards` `DelphiBuildDPROJ.ps1` instead if available; this script is a placeholder so the plan is self-contained.
-
-- [ ] **Step 5: Run from CLI to verify the build script works**
-
-In a Delphi-enabled `rsvars`-sourced PowerShell prompt:
+`DelphiBuildDPROJ.ps1` was already copied into `DX.DateChanger/build/` in Task 1. Use it (auto-detects latest Delphi from the registry, sources `rsvars.bat`, finds `msbuild`):
 
 ```powershell
-.\DX.DateChanger\build\build.ps1 -Target Tests
+.\DX.DateChanger\build\DelphiBuildDPROJ.ps1 `
+    -ProjectFile .\DX.DateChanger\tests\DX.DateChangerTests.dproj `
+    -Platform Win64 -Config Debug
 .\DX.DateChanger\build\Win64\Debug\DX.DateChangerTests.exe -exit
 ```
 
 Expected: same "0 tests" output as Step 3 (the `-exit` arg suppresses the Enter prompt).
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add DX.DateChanger/tests/DX.DateChangerTests.dproj \
-        DX.DateChanger/tests/DX.DateChangerTests.dpr \
-        DX.DateChanger/build/build.ps1
+        DX.DateChanger/tests/DX.DateChangerTests.dpr
 git commit -m "chore(dx.datechanger): add DUnitX test project skeleton
 
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
@@ -419,7 +397,7 @@ In Delphi IDE: also right-click the project in Project Manager → `Add...` and 
 Run:
 
 ```powershell
-.\DX.DateChanger\build\build.ps1 -Target Tests
+.\DX.DateChanger\build\DelphiBuildDPROJ.ps1 -ProjectFile .\DX.DateChanger\tests\DX.DateChangerTests.dproj -Platform Win64 -Config Debug
 ```
 
 Expected: build **fails** with `[dcc32 Fatal Error] DX.DateChangerTests.dpr(...): F1026 File not found: 'DX.DateChanger.Parser.dcu'` or similar.
@@ -536,7 +514,7 @@ The path is already configured (`..\src` was added to Search path in Task 2). No
 - [ ] **Step 6: Build and run tests**
 
 ```powershell
-.\DX.DateChanger\build\build.ps1 -Target Tests
+.\DX.DateChanger\build\DelphiBuildDPROJ.ps1 -ProjectFile .\DX.DateChanger\tests\DX.DateChangerTests.dproj -Platform Win64 -Config Debug
 .\DX.DateChanger\build\Win64\Debug\DX.DateChangerTests.exe -exit
 ```
 
@@ -938,7 +916,7 @@ In Delphi IDE: also add `DX.DateChanger.FileTime.pas`, `DX.DateChanger.Service.p
 - [ ] **Step 4: Verify build fails (Service unit not yet defined)**
 
 ```powershell
-.\DX.DateChanger\build\build.ps1 -Target Tests
+.\DX.DateChanger\build\DelphiBuildDPROJ.ps1 -ProjectFile .\DX.DateChanger\tests\DX.DateChangerTests.dproj -Platform Win64 -Config Debug
 ```
 
 Expected: build fails with `F1026 File not found: 'DX.DateChanger.Service.dcu'` or similar.
@@ -1132,7 +1110,7 @@ Final `uses` layout:
 - [ ] **Step 6: Build and run tests**
 
 ```powershell
-.\DX.DateChanger\build\build.ps1 -Target Tests
+.\DX.DateChanger\build\DelphiBuildDPROJ.ps1 -ProjectFile .\DX.DateChanger\tests\DX.DateChangerTests.dproj -Platform Win64 -Config Debug
 .\DX.DateChanger\build\Win64\Debug\DX.DateChangerTests.exe -exit
 ```
 
@@ -1240,7 +1218,7 @@ Also add the file via Delphi IDE Project Manager → `Add...`.
 - [ ] **Step 3: Run tests — expect smoke test to fail**
 
 ```powershell
-.\DX.DateChanger\build\build.ps1 -Target Tests
+.\DX.DateChanger\build\DelphiBuildDPROJ.ps1 -ProjectFile .\DX.DateChanger\tests\DX.DateChangerTests.dproj -Platform Win64 -Config Debug
 .\DX.DateChanger\build\Win64\Debug\DX.DateChangerTests.exe -exit
 ```
 
@@ -1342,7 +1320,7 @@ end.
 - [ ] **Step 5: Build and run tests on Windows**
 
 ```powershell
-.\DX.DateChanger\build\build.ps1 -Target Tests
+.\DX.DateChanger\build\DelphiBuildDPROJ.ps1 -ProjectFile .\DX.DateChanger\tests\DX.DateChangerTests.dproj -Platform Win64 -Config Debug
 .\DX.DateChanger\build\Win64\Debug\DX.DateChangerTests.exe -exit
 ```
 
@@ -1726,7 +1704,7 @@ In Delphi IDE: also add the three `DX.DateChanger.*.pas` files via Project Manag
 - [ ] **Step 5: Build for Win64**
 
 ```powershell
-.\DX.DateChanger\build\build.ps1 -Target Main -Platform Win64
+.\DX.DateChanger\build\DelphiBuildDPROJ.ps1 -ProjectFile .\DX.DateChanger\DX.DateChanger.dproj -Platform Win64 -Config Debug
 ```
 
 Expected: `DX.DateChanger.exe` produced at `DX.DateChanger/build/Win64/Debug/`.
@@ -1765,9 +1743,9 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 - [ ] **Step 1: Build all targets**
 
 ```powershell
-.\DX.DateChanger\build\build.ps1 -Target Tests -Platform Win64
-.\DX.DateChanger\build\build.ps1 -Target Main  -Platform Win32
-.\DX.DateChanger\build\build.ps1 -Target Main  -Platform Win64
+.\DX.DateChanger\build\DelphiBuildDPROJ.ps1 -ProjectFile .\DX.DateChanger\tests\DX.DateChangerTests.dproj -Platform Win64 -Config Debug
+.\DX.DateChanger\build\DelphiBuildDPROJ.ps1 -ProjectFile .\DX.DateChanger\DX.DateChanger.dproj      -Platform Win32 -Config Debug
+.\DX.DateChanger\build\DelphiBuildDPROJ.ps1 -ProjectFile .\DX.DateChanger\DX.DateChanger.dproj      -Platform Win64 -Config Debug
 ```
 
 Mac (from Delphi IDE with PAServer connected):
