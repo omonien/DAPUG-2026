@@ -10,6 +10,7 @@
   BorderStyle = Single
   Position = ScreenCenter
   OnCreate = FormCreate
+  OnDestroy = FormDestroy
   DesignerMasterStyle = 0
   object DropZone: TRectangle
     Align = Client
@@ -49,7 +50,7 @@
       Text = 'Filenames starting with YYYY-MM-DD will have their date set to that day, 10:00 local time.'
     end
     object LabelViewLog: TLabel
-      Align = Bottom
+      Align = MostBottom
       Margins.Right = 8.0
       Margins.Bottom = 4.0
       Size.Height = 18.000000000000000000

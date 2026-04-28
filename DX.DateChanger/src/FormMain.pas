@@ -29,6 +29,7 @@ type
     LabelViewLog: TLabel;
     RevertTimer: TTimer;
     procedure FormCreate(Sender: TObject);
+    procedure FormDestroy(Sender: TObject);
     procedure DropZoneDragOver(Sender: TObject; const Data: TDragObject; const Point: TPointF; var Operation: TDragOperation);
     procedure DropZoneDragDrop(Sender: TObject; const Data: TDragObject; const Point: TPointF);
     procedure RevertTimerTimer(Sender: TObject);
@@ -62,6 +63,11 @@ begin
   ShowDefaultText;
 end;
 
+procedure TMainForm.FormDestroy(Sender: TObject);
+begin
+  FreeAndNil(FService);
+end;
+
 procedure TMainForm.ShowDefaultText;
 begin
   LabelTitle.Text := 'Drop files here';
@@ -73,9 +79,9 @@ procedure TMainForm.ShowResult(const AResult: TDropResult);
 var
   LText: string;
 begin
-  LText := Format('Last drop: %d processed, %d skipped', [AResult.Processed, AResult.Skipped]);
+  LText := Format('Last drop: %d processed '#$00B7' %d skipped', [AResult.Processed, AResult.Skipped]);
   if AResult.Errors > 0 then
-    LText := LText + Format(', %d error(s)', [AResult.Errors]);
+    LText := LText + Format(' '#$00B7' %d error', [AResult.Errors]);
   LabelTitle.Text := LText;
   LabelHint.Text := '';
   LabelViewLog.Visible := AResult.Errors > 0;
