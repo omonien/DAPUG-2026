@@ -48,7 +48,7 @@ The service serves two purposes:
 
 | Page             | Path  | Description                                                  |
 |------------------|-------|--------------------------------------------------------------|
-| Upload form      | `/`   | Single-page form with one file picker and one Upscale button |
+| Upload form      | `/`   | Single-page form: file picker, three resolution radios (1K/2K/4K, default 2K), Upscale button |
 | Job status       | (HTMX swap targets within `/`, polled via `GET /jobs/{id}`)  |
 | Result view      | (HTMX swap target within `/`, before/after side-by-side)     |
 | Error view       | (HTMX swap target within `/`)                                |
@@ -63,12 +63,14 @@ settings dialogs, no user accounts, and no history page.
   one accent color for the Upscale button and links.
 - No third-party CSS framework.
 - The result view shows the original (left) and the remastered image (right)
-  at equal width, plus a Download button and a "Try another" link.
+  at equal width, plus a Download button, a "Try another" link, and a small
+  caption *Remastered at NK* under the result image.
 
 ### 3.3 Interaction flow
 
 1. User opens `/`, sees the form.
-2. User selects a JPEG/PNG/WebP file (≤ 10 MB) and clicks **Upscale**.
+2. User selects a JPEG/PNG/WebP file (≤ 10 MB), picks an output resolution
+   (1K/2K/4K, default 2K), and clicks **Upscale**.
 3. Form submits via `hx-post="/upscale"`. Server validates, writes the file
    to disk, enqueues a job, and returns an HTML fragment that shows a spinner
    plus `hx-get="/jobs/{id}" hx-trigger="load delay:1s, every 1s"`.
@@ -90,6 +92,7 @@ settings dialogs, no user accounts, and no history page.
 | Multipart present, exactly one file field named `image`       | "No file selected."                                    | 422  |
 | Declared MIME ∈ {`image/jpeg`, `image/png`, `image/webp`}     | "Unsupported format. Use JPEG, PNG, or WebP."          | 415  |
 | Magic-bytes sniff matches the declared MIME                   | "File doesn't look like a real image."                 | 415  |
+| `resolution` field ∈ {`1K`,`2K`,`4K`} (missing → default `2K`) | "Invalid resolution."                                  | 422  |
 | Job queue depth < 20                                          | "Server busy. Try again in a moment."                  | 503  |
 
 All error responses are rendered via the same `job_error.html` template so the
@@ -117,7 +120,8 @@ studio-grade cinematic lighting that makes every surface feel physically
 present and real.
 ```
 
-Output requested at **2K** resolution.
+Output resolution is selected by the user per request (1K / 2K / 4K, default
+2K) — see §4.5.
 
 ### 4.3 Job state machine
 
@@ -156,7 +160,21 @@ thread that runs every 5 min.
 - **No retries** on Gemini failures — surfaced honestly to the user. The
   workshop point is "see the failure" rather than "hide it".
 
-### 4.5 Upscaler error mapping
+### 4.5 Output resolution
+
+Nano Banana Pro accepts an `imageSize` parameter on `generateContent` with
+values `1K`, `2K`, or `4K`. The user picks one per request via three radio
+buttons on the upload form (default `2K`). The selection is:
+
+- validated server-side against the allowlist (see §4.1),
+- stored on the `TJob` record as a `TUpscaleResolution` enum,
+- passed to `IUpscaler.Upscale` (see §6),
+- rendered as a caption under the result image (*Remastered at NK*).
+
+Resolution choice does not change the prompt, the model, or any other
+request parameter.
+
+### 4.6 Upscaler error mapping
 
 | Cause                                  | `TJob.ErrorMsg` shown to user                          |
 |----------------------------------------|--------------------------------------------------------|
@@ -188,12 +206,17 @@ implementation is selected at startup via `[Upscaler] Provider=` in
 `config.ini` (see §8).
 
 ```pascal
+TUpscaleResolution = (Res1K, Res2K, Res4K);
+
 IUpscaler = interface
   ['{...GUID...}']
-  /// Sends the source image bytes to the upscaler and returns the
-  /// remastered image bytes. Raises EUpscalerError on any failure
-  /// (the orchestrator maps the exception to a user-facing message).
-  function Upscale(const ASource: TBytes; const ASourceMime: string): TBytes;
+  /// Sends the source image bytes to the upscaler at the requested
+  /// output resolution and returns the remastered image bytes. Raises
+  /// EUpscalerError on any failure (the orchestrator maps the exception
+  /// to a user-facing message).
+  function Upscale(const ASource: TBytes;
+                   const ASourceMime: string;
+                   const AResolution: TUpscaleResolution): TBytes;
 end;
 ```
 
@@ -202,7 +225,8 @@ end;
 - Uses `TNetHTTPClient` (RTL).
 - Builds the JSON request body manually (`generateContent` schema), embeds the
   source image as base64 with `inlineData.mimeType`/`data`, sends the prompt
-  text part, requests 2K output.
+  text part, and sets `imageSize` to the requested resolution
+  (`1K` / `2K` / `4K`).
 - POSTs to:
   `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent`
   with the API key in the `x-goog-api-key` header.
@@ -298,7 +322,7 @@ then exit non-zero.
   (`Loaded remaster prompt, N chars`) so attendees can confirm it loaded.
 - The API key is **never** logged.
 - Full Gemini error responses are logged on failure; only the user-facing
-  message from §4.5 is sent to the browser.
+  message from §4.6 is sent to the browser.
 
 ## 11. Project structure
 
@@ -349,11 +373,14 @@ ImageUpscaleService/
 
 - **Unit tests (DUnitX):**
   - `IUS.Validation` — size limit, MIME allowlist, magic-byte sniff for each
-    accepted format and a representative wrong-format file.
+    accepted format and a representative wrong-format file, and resolution
+    allowlist (each of `1K`/`2K`/`4K` accepted; missing → defaults to `2K`;
+    invalid value → 422).
   - `IUS.Prompt` — exact byte-for-byte match against the canonical prompt
     text; guards against accidental edits.
   - `IUS.JobQueue` — enqueue, dequeue, status transitions, bounded-queue
-    rejection at depth 20, concurrent enqueue from multiple threads.
+    rejection at depth 20, concurrent enqueue from multiple threads,
+    `Resolution` field round-trip on `TJob`.
   - `IUS.Storage` — sweep predicate (given a file age, should delete?),
     write/read round-trip.
 - **Integration smoke test:**
