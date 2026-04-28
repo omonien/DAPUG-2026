@@ -1,6 +1,12 @@
 # Everything AI — DAPUG Delphi Workshop
 
+<a href="https://www.dapug.dk/2026/02/workshop-everything-ai-with-olaf-monien.html">
+  <img src="assets/olaf.png" alt="Workshop announcement — Olaf Monien" align="right" width="180" />
+</a>
+
 A 2-day workshop on using AI **with** Delphi (coding agents, prompt workflows, model selection) and putting AI **inside** Delphi applications (tool/function calling, document parsing, smart features). Hosted by [**DAPUG**](https://www.dapug.dk/) at Hotel Hesselet, Denmark.
+
+→ Original [**workshop announcement on dapug.dk**](https://www.dapug.dk/2026/02/workshop-everything-ai-with-olaf-monien.html).
 
 This repository is the public mirror of everything used and produced during the workshop: slides, agenda, conventions, prompts, code, and the Delphi project we build live with the room. It is organized so you can either review what we did or work through the same material on your own afterwards.
 
