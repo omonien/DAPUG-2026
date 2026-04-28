@@ -4,3 +4,9 @@
 [submodule "ImageUpscaleService/libs/DUnitX"]
 	path = ImageUpscaleService/libs/DUnitX
 	url = https://github.com/VSoftTechnologies/DUnitX.git
+[submodule "ImageUpscaleService/libs/Horse"]
+	path = ImageUpscaleService/libs/Horse
+	url = https://github.com/HashLoad/horse.git
+[submodule "ImageUpscaleService/libs/DelphiGemini"]
+	path = ImageUpscaleService/libs/DelphiGemini
+	url = https://github.com/MaxiDonkey/DelphiGemini.git
