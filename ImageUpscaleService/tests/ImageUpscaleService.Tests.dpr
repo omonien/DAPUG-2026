@@ -16,6 +16,8 @@ uses
   IUS.Tests.Validation in 'IUS.Tests.Validation.pas',
   IUS.Upscaler.Fake in '..\src\IUS.Upscaler.Fake.pas',
   IUS.Tests.Upscaler.Fake in 'IUS.Tests.Upscaler.Fake.pas',
+  IUS.Storage in '..\src\IUS.Storage.pas',
+  IUS.Tests.Storage in 'IUS.Tests.Storage.pas',
   DUnitX.TestFramework;
 
 {$IFDEF TESTINSIGHT}
