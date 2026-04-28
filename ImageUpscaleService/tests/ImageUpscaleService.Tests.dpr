@@ -14,6 +14,8 @@ uses
   {$ENDIF }
   IUS.Tests.Prompt in 'IUS.Tests.Prompt.pas',
   IUS.Tests.Validation in 'IUS.Tests.Validation.pas',
+  IUS.Upscaler.Fake in '..\src\IUS.Upscaler.Fake.pas',
+  IUS.Tests.Upscaler.Fake in 'IUS.Tests.Upscaler.Fake.pas',
   DUnitX.TestFramework;
 
 {$IFDEF TESTINSIGHT}

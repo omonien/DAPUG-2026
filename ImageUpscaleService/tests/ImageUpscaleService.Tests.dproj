@@ -83,6 +83,8 @@
         <DCCReference Include="..\src\IUS.Upscaler.Intf.pas"/>
         <DCCReference Include="..\src\IUS.Validation.pas"/>
         <DCCReference Include="IUS.Tests.Validation.pas"/>
+        <DCCReference Include="..\src\IUS.Upscaler.Fake.pas"/>
+        <DCCReference Include="IUS.Tests.Upscaler.Fake.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
