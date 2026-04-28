@@ -1,0 +1,147 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <Base>True</Base>
+        <AppType>Console</AppType>
+        <Config Condition="'$(Config)'==''">Debug</Config>
+        <FrameworkType>VCL</FrameworkType>
+        <MainSource>ImageUpscaleService.Tests.dpr</MainSource>
+        <Platform Condition="'$(Platform)'==''">Win64</Platform>
+        <ProjectGuid>{C1E2F3A4-D5B6-7890-ABCD-EF1234567A03}</ProjectGuid>
+        <ProjectName Condition="'$(ProjectName)'==''">ImageUpscaleService.Tests</ProjectName>
+        <ProjectVersion>20.3</ProjectVersion>
+        <TargetedPlatforms>131</TargetedPlatforms>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Config)'=='Debug' or '$(Cfg_1)'!=''">
+        <Cfg_1>true</Cfg_1>
+        <CfgParent>Base</CfgParent>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Cfg_1)'=='true') or '$(Cfg_1_Win32)'!=''">
+        <Cfg_1_Win32>true</Cfg_1_Win32>
+        <CfgParent>Cfg_1</CfgParent>
+        <Cfg_1>true</Cfg_1>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win64' and '$(Cfg_1)'=='true') or '$(Cfg_1_Win64)'!=''">
+        <Cfg_1_Win64>true</Cfg_1_Win64>
+        <CfgParent>Cfg_1</CfgParent>
+        <Cfg_1>true</Cfg_1>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Config)'=='Release' or '$(Cfg_2)'!=''">
+        <Cfg_2>true</Cfg_2>
+        <CfgParent>Base</CfgParent>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Cfg_2)'=='true') or '$(Cfg_2_Win32)'!=''">
+        <Cfg_2_Win32>true</Cfg_2_Win32>
+        <CfgParent>Cfg_2</CfgParent>
+        <Cfg_2>true</Cfg_2>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win64' and '$(Cfg_2)'=='true') or '$(Cfg_2_Win64)'!=''">
+        <Cfg_2_Win64>true</Cfg_2_Win64>
+        <CfgParent>Cfg_2</CfgParent>
+        <Cfg_2>true</Cfg_2>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Base)'!=''">
+        <SanitizedProjectName>ImageUpscaleService_Tests</SanitizedProjectName>
+        <DCC_DcuOutput>..\build\$(Platform)\$(Config)\dcu</DCC_DcuOutput>
+        <DCC_ExeOutput>..\build\$(Platform)\$(Config)</DCC_ExeOutput>
+        <DCC_UnitSearchPath>..\src;..\libs\DUnitX\Source;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <Icns_MainIcns>$(BDS)\bin\delphi_PROJECTICNS.icns</Icns_MainIcns>
+        <Icon_MainIcon>$(BDS)\bin\delphi_PROJECTICON.ico</Icon_MainIcon>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_1)'!=''">
+        <DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
+        <AppDPIAwarenessMode>none</AppDPIAwarenessMode>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_1_Win64)'!=''">
+        <AppDPIAwarenessMode>none</AppDPIAwarenessMode>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_2)'!=''">
+        <DCC_Define>RELEASE;$(DCC_Define)</DCC_Define>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
+        <AppDPIAwarenessMode>none</AppDPIAwarenessMode>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_2_Win64)'!=''">
+        <AppDPIAwarenessMode>none</AppDPIAwarenessMode>
+    </PropertyGroup>
+    <ItemGroup>
+        <DelphiCompile Include="$(MainSource)">
+            <MainSource>MainSource</MainSource>
+        </DelphiCompile>
+        <BuildConfiguration Include="Base">
+            <Key>Base</Key>
+        </BuildConfiguration>
+        <BuildConfiguration Include="Debug">
+            <Key>Cfg_1</Key>
+            <CfgParent>Base</CfgParent>
+        </BuildConfiguration>
+        <BuildConfiguration Include="Release">
+            <Key>Cfg_2</Key>
+            <CfgParent>Base</CfgParent>
+        </BuildConfiguration>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Delphi.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Delphi.Personality>
+                <Source>
+                    <Source Name="MainSource">ImageUpscaleService.Tests.dpr</Source>
+                </Source>
+                <Excluded_Packages/>
+            </Delphi.Personality>
+            <Platforms>
+                <Platform value="Android">False</Platform>
+                <Platform value="Android64">False</Platform>
+                <Platform value="Linux64">False</Platform>
+                <Platform value="OSX64">False</Platform>
+                <Platform value="OSXARM64">False</Platform>
+                <Platform value="Win32">True</Platform>
+                <Platform value="Win64">True</Platform>
+                <Platform value="iOSDevice64">False</Platform>
+                <Platform value="iOSSimARM64">False</Platform>
+            </Platforms>
+            <VersionInfo>
+                <VersionInfo Name="IncludeVerInfo">True</VersionInfo>
+                <VersionInfo Name="AutoIncBuild">False</VersionInfo>
+                <VersionInfo Name="MajorVer">1</VersionInfo>
+                <VersionInfo Name="MinorVer">0</VersionInfo>
+                <VersionInfo Name="Release">0</VersionInfo>
+                <VersionInfo Name="Build">0</VersionInfo>
+                <VersionInfo Name="Debug">False</VersionInfo>
+                <VersionInfo Name="PreRelease">False</VersionInfo>
+                <VersionInfo Name="Special">False</VersionInfo>
+                <VersionInfo Name="Private">False</VersionInfo>
+                <VersionInfo Name="DLL">False</VersionInfo>
+                <VersionInfo Name="Locale">1031</VersionInfo>
+                <VersionInfo Name="CodePage">1252</VersionInfo>
+            </VersionInfo>
+            <VersionInfoKeys>
+                <VersionInfoKeys Name="CompanyName">Olaf Monien</VersionInfoKeys>
+                <VersionInfoKeys Name="FileDescription">ImageUpscaleService Unit Tests</VersionInfoKeys>
+                <VersionInfoKeys Name="FileVersion">1.0.0.0</VersionInfoKeys>
+                <VersionInfoKeys Name="InternalName">ImageUpscaleService.Tests</VersionInfoKeys>
+                <VersionInfoKeys Name="LegalCopyright">Copyright (c) 2026 Olaf Monien</VersionInfoKeys>
+                <VersionInfoKeys Name="LegalTrademarks"/>
+                <VersionInfoKeys Name="OriginalFilename">ImageUpscaleService.Tests.exe</VersionInfoKeys>
+                <VersionInfoKeys Name="ProductName">ImageUpscaleService</VersionInfoKeys>
+                <VersionInfoKeys Name="ProductVersion">1.0.0.0</VersionInfoKeys>
+                <VersionInfoKeys Name="Comments">MIT License</VersionInfoKeys>
+            </VersionInfoKeys>
+        </BorlandProject>
+        <ProjectFileVersion>12</ProjectFileVersion>
+    </ProjectExtensions>
+    <Import Project="$(BDS)\Bin\CodeGear.Delphi.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Delphi.Targets')"/>
+    <Import Project="$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj" Condition="Exists('$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj')"/>
+    <Import Project="$(MSBuildProjectName).deployproj" Condition="Exists('$(MSBuildProjectName).deployproj')"/>
+</Project>
