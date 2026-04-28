@@ -44,15 +44,66 @@ function CreateFileTimeSetter: IFileTimeSetter;
 
 implementation
 
+uses
+{$IFDEF MSWINDOWS}
+  Winapi.Windows,
+{$ENDIF}
+  System.DateUtils;
+
 constructor EFileTimeError.Create(const AMessage: string; AOSErrorCode: Integer);
 begin
   inherited Create(AMessage);
   Self.OSErrorCode := AOSErrorCode;
 end;
 
+{$IFDEF MSWINDOWS}
+type
+  TWinFileTimeSetter = class(TInterfacedObject, IFileTimeSetter)
+  public
+    procedure SetTimes(const APath: string; const AWhen: TDateTime);
+  end;
+
+procedure TWinFileTimeSetter.SetTimes(const APath: string; const AWhen: TDateTime);
+var
+  LHandle: THandle;
+  LSysTime: TSystemTime;
+  LFileTimeUtc: TFileTime;
+  LWhenUtc: TDateTime;
+  LErr: Integer;
+begin
+  LHandle := CreateFileW(PChar(APath), GENERIC_WRITE, FILE_SHARE_READ or FILE_SHARE_WRITE,
+    nil, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+  if LHandle = INVALID_HANDLE_VALUE then
+  begin
+    LErr := GetLastError;
+    raise EFileTimeError.Create('CreateFileW failed: ' + SysErrorMessage(LErr), LErr);
+  end;
+  try
+    LWhenUtc := TTimeZone.Local.ToUniversalTime(AWhen);
+    DateTimeToSystemTime(LWhenUtc, LSysTime);
+    if not SystemTimeToFileTime(LSysTime, LFileTimeUtc) then
+    begin
+      LErr := GetLastError;
+      raise EFileTimeError.Create('SystemTimeToFileTime failed', LErr);
+    end;
+    if not SetFileTime(LHandle, @LFileTimeUtc, @LFileTimeUtc, @LFileTimeUtc) then
+    begin
+      LErr := GetLastError;
+      raise EFileTimeError.Create('SetFileTime failed: ' + SysErrorMessage(LErr), LErr);
+    end;
+  finally
+    CloseHandle(LHandle);
+  end;
+end;
+{$ENDIF}
+
 function CreateFileTimeSetter: IFileTimeSetter;
 begin
-  raise ENotImplemented.Create('CreateFileTimeSetter: no implementation yet');
+{$IFDEF MSWINDOWS}
+  Result := TWinFileTimeSetter.Create;
+{$ELSE}
+  raise ENotImplemented.Create('CreateFileTimeSetter: macOS impl pending (Task 6)');
+{$ENDIF}
 end;
 
 end.

@@ -17,7 +17,8 @@ uses
   DX.DateChanger.FileTime in '..\src\DX.DateChanger.FileTime.pas',
   DX.DateChanger.Service  in '..\src\DX.DateChanger.Service.pas',
   DX.DateChanger.Parser.Tests  in 'DX.DateChanger.Parser.Tests.pas',
-  DX.DateChanger.Service.Tests in 'DX.DateChanger.Service.Tests.pas';
+  DX.DateChanger.Service.Tests in 'DX.DateChanger.Service.Tests.pas',
+  DX.DateChanger.FileTime.Tests in 'DX.DateChanger.FileTime.Tests.pas';
 
 {$IFNDEF TESTINSIGHT}
 var

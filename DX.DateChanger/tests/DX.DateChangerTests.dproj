@@ -83,6 +83,7 @@
         <DCCReference Include="..\src\DX.DateChanger.Service.pas"/>
         <DCCReference Include="DX.DateChanger.Parser.Tests.pas"/>
         <DCCReference Include="DX.DateChanger.Service.Tests.pas"/>
+        <DCCReference Include="DX.DateChanger.FileTime.Tests.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
