@@ -13,8 +13,11 @@ uses
   DUnitX.Loggers.Console,
   {$ENDIF }
   DUnitX.TestFramework,
-  DX.DateChanger.Parser in '..\src\DX.DateChanger.Parser.pas',
-  DX.DateChanger.Parser.Tests in 'DX.DateChanger.Parser.Tests.pas';
+  DX.DateChanger.Parser   in '..\src\DX.DateChanger.Parser.pas',
+  DX.DateChanger.FileTime in '..\src\DX.DateChanger.FileTime.pas',
+  DX.DateChanger.Service  in '..\src\DX.DateChanger.Service.pas',
+  DX.DateChanger.Parser.Tests  in 'DX.DateChanger.Parser.Tests.pas',
+  DX.DateChanger.Service.Tests in 'DX.DateChanger.Service.Tests.pas';
 
 {$IFNDEF TESTINSIGHT}
 var
