@@ -66,8 +66,8 @@ You don't need to have attended to use this repo. To work through the hands-on p
 Then:
 
 ```bash
-git clone https://github.com/<owner>/<repo>.git dapug-workshop
-cd dapug-workshop
+git clone https://github.com/omonien/DAPUG-2026.git
+cd DAPUG-2026
 ```
 
 ---
@@ -87,4 +87,11 @@ cd dapug-workshop
 - **Workshop alumni** — pull requests welcome, especially for new prompts or improvements to the workflow kit
 - **Hosting your own edition** — feel free to fork. The agenda and conventions are written to be adapted and reused.
 
-Maintained by [Olaf Monien](https://monien.net) on behalf of [DAPUG](https://www.dapug.dk/).
+---
+
+## License
+
+Released under the [MIT License](LICENSE) — both the code and the written materials. Copyright © 2026 Olaf Monien. Use, adapt, and reuse freely; attribution is appreciated but not required.
+
+The repository ships with Delphi-optimized [`.gitignore`](.gitignore) and [`.gitattributes`](.gitattributes) (UTF-8 BOM + CRLF for `.pas`/`.dfm`/`.fmx`, ignoring build artifacts), taken from [omonien/DelphiStandards](https://github.com/omonien/DelphiStandards). Drop them into your own Delphi repos as a starting point.
+
