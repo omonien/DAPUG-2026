@@ -18,6 +18,8 @@ uses
   IUS.Tests.Upscaler.Fake in 'IUS.Tests.Upscaler.Fake.pas',
   IUS.Storage in '..\src\IUS.Storage.pas',
   IUS.Tests.Storage in 'IUS.Tests.Storage.pas',
+  IUS.JobQueue in '..\src\IUS.JobQueue.pas',
+  IUS.Tests.JobQueue in 'IUS.Tests.JobQueue.pas',
   DUnitX.TestFramework;
 
 {$IFDEF TESTINSIGHT}
