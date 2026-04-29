@@ -56,8 +56,17 @@ You should see:
 
 ```
 Loaded remaster prompt, 787 chars
+Project root:    C:\...\ImageUpscaleService\
+Config:          C:\...\ImageUpscaleService\config.ini
+Uploads / results: C:\...\var\uploads | C:\...\var\results
 ImageUpscaleService listening on http://localhost:8080  (upscaler=native)
 ```
+
+The exe finds `config.ini`, `templates/`, and `public/` by walking up
+from its own location until it sees a `templates/` folder — so launching
+from the repo root, from inside `build/Win64/Debug/`, or from the IDE all
+work identically. Override the config path with `--config path\to\file.ini`
+if you want to point somewhere else.
 
 Open <http://localhost:8080/> in a browser, upload an image, pick a
 resolution (1K / 2K / 4K), click **Upscale**.
