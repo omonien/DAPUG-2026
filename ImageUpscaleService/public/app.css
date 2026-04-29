@@ -484,3 +484,53 @@ body {
   .actions-row .btn { width: 100%; }
   .app-header h1 { font-size: 17px; }
 }
+
+/* --- Description block ------------------------------------ */
+.describe-slot {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.describe-pending {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.describe-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: describe-spin 0.7s linear infinite;
+  display: inline-block;
+}
+
+@keyframes describe-spin {
+  to { transform: rotate(360deg); }
+}
+
+.describe-done {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.describe-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--accent-hover);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.describe-caption {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.55;
+}
