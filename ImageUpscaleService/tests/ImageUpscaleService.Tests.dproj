@@ -104,6 +104,8 @@
         <DCCReference Include="..\src\IUS.Describer.Intf.pas"/>
         <DCCReference Include="..\src\IUS.Describer.Fake.pas"/>
         <DCCReference Include="IUS.Tests.Describer.Fake.pas"/>
+        <DCCReference Include="..\src\IUS.Describer.Native.pas"/>
+        <DCCReference Include="IUS.Tests.Describer.Native.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

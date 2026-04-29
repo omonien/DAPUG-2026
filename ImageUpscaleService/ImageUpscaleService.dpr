@@ -17,7 +17,8 @@ uses
   IUS.Upscaler.DelphiGemini in 'src\IUS.Upscaler.DelphiGemini.pas',
   IUS.Describer.Intf in 'src\IUS.Describer.Intf.pas',
   IUS.DescribePrompt in 'src\IUS.DescribePrompt.pas',
-  IUS.Describer.Fake in 'src\IUS.Describer.Fake.pas';
+  IUS.Describer.Fake in 'src\IUS.Describer.Fake.pas',
+  IUS.Describer.Native in 'src\IUS.Describer.Native.pas';
 
 begin
   try
