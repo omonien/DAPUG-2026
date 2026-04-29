@@ -33,7 +33,6 @@ var
   LDoc: TPdfDocument;
   LPage: TPdfPage;
   LPageIdx: Integer;
-  LText: string;
 begin
   LDoc := TPdfDocument.Create;
   try
@@ -42,12 +41,7 @@ begin
     for LPageIdx := 0 to LDoc.PageCount - 1 do
     begin
       LPage := LDoc.Pages[LPageIdx];
-      try
-        LText := LPage.GetText(0, LPage.GetCharCount);
-        Result[LPageIdx] := LText;
-      finally
-        LPage.Free;
-      end;
+      Result[LPageIdx] := LPage.GetText(0, LPage.GetCharCount);
     end;
   finally
     LDoc.Free;
