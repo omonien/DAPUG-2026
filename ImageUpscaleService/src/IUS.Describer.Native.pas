@@ -53,17 +53,17 @@ function TNativeDescriber.BuildRequestBody(const AImage: TBytes;
 var
   LRoot, LContent, LTextPart, LImagePart, LInlineData, LGenCfg, LSchema,
   LProps, LTitleProp, LCaptionProp: TJSONObject;
-  LContents, LParts, LRequired: TJSONArray;
+  LContentsArr, LPartsArr, LRequired: TJSONArray;
 begin
   LRoot := TJSONObject.Create;
   try
-    LContents := TJSONArray.Create;
-    LContent  := TJSONObject.Create;
-    LParts    := TJSONArray.Create;
+    LContentsArr := TJSONArray.Create;
+    LContent     := TJSONObject.Create;
+    LPartsArr    := TJSONArray.Create;
 
     LTextPart := TJSONObject.Create;
     LTextPart.AddPair('text', cDescribePrompt);
-    LParts.AddElement(LTextPart);
+    LPartsArr.AddElement(LTextPart);
 
     LInlineData := TJSONObject.Create;
     LInlineData.AddPair('mimeType', AImageMime);
@@ -73,11 +73,11 @@ begin
       TNetEncoding.Base64String.EncodeBytesToString(AImage));
     LImagePart := TJSONObject.Create;
     LImagePart.AddPair('inlineData', LInlineData);
-    LParts.AddElement(LImagePart);
+    LPartsArr.AddElement(LImagePart);
 
-    LContent.AddPair('parts', LParts);
-    LContents.AddElement(LContent);
-    LRoot.AddPair('contents', LContents);
+    LContent.AddPair('parts', LPartsArr);
+    LContentsArr.AddElement(LContent);
+    LRoot.AddPair('contents', LContentsArr);
 
     // Structured output: ask for JSON conforming to a fixed schema.
     LTitleProp   := TJSONObject.Create;

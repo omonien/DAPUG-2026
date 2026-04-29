@@ -68,6 +68,7 @@ begin
     LBody := LDescriber.BuildRequestBody(TBytes.Create(1, 2, 3), 'image/png');
     Assert.Contains(LBody, '"responseMimeType":"application\/json"');
     Assert.Contains(LBody, '"responseSchema"');
+    Assert.Contains(LBody, '"required"');
     Assert.Contains(LBody, '"title"');
     Assert.Contains(LBody, '"caption"');
   finally
