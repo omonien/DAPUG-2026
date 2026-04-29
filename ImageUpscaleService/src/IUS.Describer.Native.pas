@@ -34,6 +34,9 @@ type
     ///   Public for unit-test purposes.</summary>
     function ExtractDescription(const AResponseBody: string): TDescription;
     function Describe(const AImage: TBytes; const AImageMime: string): TDescription;
+    /// <summary>Maps an HTTP status code to an EDescriber* exception.
+    ///   Class method so tests can drive it directly.</summary>
+    class procedure MapStatusCode(const AStatusCode: Integer; const ABody: string); static;
   end;
 
 implementation
@@ -165,11 +168,57 @@ begin
   end;
 end;
 
+class procedure TNativeDescriber.MapStatusCode(const AStatusCode: Integer;
+                                               const ABody: string);
+begin
+  case AStatusCode of
+    200: ; // ok
+    429: raise EDescriberQuotaError.Create('429 quota');
+    400, 403, 404:
+      raise EDescriberRejectedError.CreateFmt('%d %s', [AStatusCode, ABody]);
+    500..599:
+      raise EDescriberServerError.CreateFmt('%d %s', [AStatusCode, ABody]);
+  else
+    raise EDescriberRejectedError.CreateFmt('%d %s', [AStatusCode, ABody]);
+  end;
+end;
+
 function TNativeDescriber.Describe(const AImage: TBytes;
                                    const AImageMime: string): TDescription;
+var
+  LClient: TNetHTTPClient;
+  LRequest: TNetHTTPRequest;
+  LResponse: IHTTPResponse;
+  LBody: TStringStream;
+  LUrl: string;
 begin
-  // Implemented in Task 6.
-  raise EDescriberNetworkError.Create('not implemented yet');
+  LClient := TNetHTTPClient.Create(nil);
+  LRequest := TNetHTTPRequest.Create(nil);
+  LBody := TStringStream.Create(BuildRequestBody(AImage, AImageMime), TEncoding.UTF8);
+  try
+    LClient.ConnectionTimeout := 30000;
+    LClient.ResponseTimeout   := 30000;
+    LRequest.Client := LClient;
+    LRequest.CustomHeaders['x-goog-api-key'] := FApiKey;
+    LRequest.CustomHeaders['Content-Type']   := 'application/json';
+    LUrl := Format(
+      'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent',
+      [FModel]);
+
+    try
+      LResponse := LRequest.Post(LUrl, LBody);
+    except
+      on E: ENetHTTPClientException do
+        raise EDescriberNetworkError.Create('Network error: ' + E.Message);
+    end;
+
+    MapStatusCode(LResponse.StatusCode, LResponse.ContentAsString);
+    Result := ExtractDescription(LResponse.ContentAsString);
+  finally
+    LBody.Free;
+    LRequest.Free;
+    LClient.Free;
+  end;
 end;
 
 end.

@@ -19,6 +19,14 @@ type
     [Test] procedure ExtractDescription_RaisesEmptyResult_WhenMissingTitle;
     [Test] procedure ExtractDescription_RaisesEmptyResult_WhenMissingCaption;
     [Test] procedure ExtractDescription_RaisesEmptyResult_WhenSafetyBlocked;
+    [Test] procedure MapStatusCode_429_RaisesQuota;
+    [Test] procedure MapStatusCode_500_RaisesServer;
+    [Test] procedure MapStatusCode_503_RaisesServer;
+    [Test] procedure MapStatusCode_400_RaisesRejected;
+    [Test] procedure MapStatusCode_403_RaisesRejected;
+    [Test] procedure MapStatusCode_404_RaisesRejected;
+    [Test] procedure MapStatusCode_418_RaisesRejected;
+    [Test] procedure MapStatusCode_200_DoesNotRaise;
   end;
 
 implementation
@@ -198,6 +206,62 @@ begin
   finally
     LDescriber.Free;
   end;
+end;
+
+procedure TNativeDescriberTests.MapStatusCode_429_RaisesQuota;
+begin
+  Assert.WillRaise(
+    procedure begin TNativeDescriber.MapStatusCode(429, 'rate'); end,
+    EDescriberQuotaError);
+end;
+
+procedure TNativeDescriberTests.MapStatusCode_500_RaisesServer;
+begin
+  Assert.WillRaise(
+    procedure begin TNativeDescriber.MapStatusCode(500, 'oops'); end,
+    EDescriberServerError);
+end;
+
+procedure TNativeDescriberTests.MapStatusCode_503_RaisesServer;
+begin
+  Assert.WillRaise(
+    procedure begin TNativeDescriber.MapStatusCode(503, 'unavailable'); end,
+    EDescriberServerError);
+end;
+
+procedure TNativeDescriberTests.MapStatusCode_400_RaisesRejected;
+begin
+  Assert.WillRaise(
+    procedure begin TNativeDescriber.MapStatusCode(400, 'bad'); end,
+    EDescriberRejectedError);
+end;
+
+procedure TNativeDescriberTests.MapStatusCode_403_RaisesRejected;
+begin
+  Assert.WillRaise(
+    procedure begin TNativeDescriber.MapStatusCode(403, 'forbidden'); end,
+    EDescriberRejectedError);
+end;
+
+procedure TNativeDescriberTests.MapStatusCode_404_RaisesRejected;
+begin
+  Assert.WillRaise(
+    procedure begin TNativeDescriber.MapStatusCode(404, 'not found'); end,
+    EDescriberRejectedError);
+end;
+
+procedure TNativeDescriberTests.MapStatusCode_418_RaisesRejected;
+begin
+  Assert.WillRaise(
+    procedure begin TNativeDescriber.MapStatusCode(418, 'teapot'); end,
+    EDescriberRejectedError);
+end;
+
+procedure TNativeDescriberTests.MapStatusCode_200_DoesNotRaise;
+begin
+  // Should not raise.
+  TNativeDescriber.MapStatusCode(200, '');
+  Assert.Pass;
 end;
 
 initialization
