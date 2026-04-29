@@ -146,9 +146,16 @@ begin
 end;
 
 function TRoutesContext.TryParseJobId(const AStr: string; out AId: TGuid): Boolean;
+var
+  L: string;
 begin
+  // Accept both {GUID} (what TGuid.ToString and our templates produce in URLs)
+  // and bare GUID forms.
+  L := AStr;
+  if (Length(L) > 0) and (L[1] <> '{') then
+    L := '{' + L + '}';
   try
-    AId := TGuid.Create('{' + AStr + '}');
+    AId := TGuid.Create(L);
     Result := True;
   except
     Result := False;
