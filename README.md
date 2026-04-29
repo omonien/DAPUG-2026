@@ -92,7 +92,7 @@ You don't need to have attended to use this repo. To work through the hands-on p
 2. **Git** — installed and on `PATH` (`git --version` works in your terminal)
 3. **A Markdown editor** — VS Code, Notepad++, anything. Most of this repo is `.md`.
 4. **A coding agent** — at least one of:
-   - [Claude Code](https://claude.com/claude-code)
+   - [Claude Code](https://claude.com/claude-code) — see the [official setup guide](https://code.claude.com/docs/en/setup#winget) for the Windows install via `winget`
    - [Kilo Code](https://kilocode.ai)
    - [Cline](https://cline.bot/)
    - or another agent of your choice
@@ -106,6 +106,31 @@ cd DAPUG-2026
 ```
 
 `--recurse-submodules` fetches DUnitX into `DX.DateChanger/libs/DUnitX/` so the demo's test project compiles. If you cloned without it, run `git submodule update --init` afterwards.
+
+---
+
+## Recommended tooling & references
+
+A short, curated list of the AI tooling we point attendees to. None of this is a paid endorsement — these are simply the tools we use ourselves and consider a sensible starting point for Delphi developers building with and inside AI.
+
+### Delphi AI components
+
+For calling LLMs *from* Delphi code, we generally recommend:
+
+- [**MaxiDonkey**](https://github.com/MaxiDonkey) — a family of well-maintained Delphi wrappers for the major LLM providers ([DelphiAnthropic](https://github.com/MaxiDonkey/DelphiAnthropic), [DelphiGemini](https://github.com/MaxiDonkey/DelphiGemini), DelphiOpenAI, DelphiMistralAI, …). The `ImageUpscaleService` demo in this repo uses `DelphiGemini`.
+- [**MakerAI**](https://github.com/gustavoeenriquez/MakerAi) — a native Delphi AI framework: universal LLM connector (OpenAI, Claude, Gemini, Ollama, …), RAG, autonomous agents with semantic memory, and FMX chat UI components.
+
+### Coding agents — install
+
+- [**Claude Code (CLI)**](https://code.claude.com/docs/en/setup#winget) — official setup guide. On Windows the recommended path is `winget install Anthropic.ClaudeCode`. macOS/Linux installers are on the same page.
+
+### Local & alternative models
+
+- [**Ollama**](https://ollama.com/) — runs open-weight models (Llama, Qwen, Mistral, DeepSeek, gpt-oss, …) locally. It also serves as a drop-in backend for coding agents like Claude Code, so you can route an agent to a local model instead of a cloud API — useful for offline work, sensitive code, or simply trying other models with the same agent.
+
+### Token-efficient code search
+
+- [**CodeGraph**](https://github.com/colbymchenry/codegraph) — builds a semantic knowledge graph of your codebase so a coding agent can locate and explore code with far fewer tokens than blind `grep` / file reads. Run `codegraph init -i` once in a repo and the agent gets a `codegraph_*` MCP toolset. Recommended for larger Delphi codebases where context budget becomes the bottleneck.
 
 ---
 
