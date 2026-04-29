@@ -6,11 +6,11 @@
   ///   Six routes: GET /, POST /upscale, GET /jobs/:id, GET /original/:id,
   ///   GET /result/:id, GET /healthz, plus a static-file handler for /static/*.
   ///
-  ///   Templates are rendered via simple @var string substitution rather than
-  ///   the full Web.Stencils engine. The PRD specified WebStencils, but for
-  ///   our four simple per-request variables the bare substitution approach
-  ///   is dramatically easier to teach and read in the workshop and produces
-  ///   identical output.
+  ///   Templates are rendered with Web.Stencils. The full page (index.html)
+  ///   opts into the master layout via the @LayoutPage directive; layout.html
+  ///   exposes the slot via @RenderBody. HTMX fragment templates (job_pending,
+  ///   job_done, job_error) intentionally omit @LayoutPage so they render as
+  ///   bare HTML for hx-swap.
   /// </remarks>
   /// <copyright>
   ///   Copyright (c) 2026 Olaf Monien. MIT License.
@@ -23,6 +23,7 @@ interface
 uses
   System.SysUtils, System.Classes, System.IOUtils, System.Generics.Collections,
   Web.HTTPApp,
+  Web.Stencils,
   Horse,
   IUS.JobQueue, IUS.Validation, IUS.Upscaler.Intf, IUS.Storage;
 
@@ -34,10 +35,8 @@ type
     FStaticDir: string;
     FUploadDir: string;
     FResultDir: string;
-    function LoadTemplate(const AName: string): string;
-    function Render(const ATemplate: string;
-                    const AVars: array of string): string;
-    function RenderPage(const APageTemplate: string;
+    FEngine: TWebStencilsEngine;
+    function RenderPage(const ATemplateName: string;
                         const AVars: array of string): string;
     function RenderError(const AMessage: string): string;
     function RenderPending(const AJob: TJob): string;
@@ -49,6 +48,7 @@ type
   public
     constructor Create(AQueue: TJobQueue;
                        const ATemplateDir, AStaticDir, AUploadDir, AResultDir: string);
+    destructor Destroy; override;
     procedure Register;
   end;
 
@@ -63,36 +63,55 @@ begin
   FStaticDir := AStaticDir;
   FUploadDir := AUploadDir;
   FResultDir := AResultDir;
+  FEngine := TWebStencilsEngine.Create(nil);
+  FEngine.RootDirectory := FTemplateDir;
 end;
 
-function TRoutesContext.LoadTemplate(const AName: string): string;
+destructor TRoutesContext.Destroy;
 begin
-  Result := TFile.ReadAllText(TPath.Combine(FTemplateDir, AName), TEncoding.UTF8);
+  FEngine.Free;
+  inherited;
 end;
 
-function TRoutesContext.Render(const ATemplate: string;
-                               const AVars: array of string): string;
-var
-  I: Integer;
+// Helper to register a per-request scalar variable. Lives outside RenderPage
+// so each call gets its own AValue parameter on the stack — the closure
+// captures that frame, avoiding the classic "all closures share the loop var"
+// trap when registering several variables in a row.
+procedure RegisterTemplateVar(AProc: TWebStencilsProcessor;
+                              const AName, AValue: string);
 begin
-  Result := ATemplate;
-  // AVars is a flat array: name1, value1, name2, value2, ...
-  I := 0;
-  while I < Length(AVars) - 1 do
-  begin
-    Result := StringReplace(Result, '@' + AVars[I], AVars[I + 1], [rfReplaceAll]);
-    Inc(I, 2);
-  end;
+  AProc.AddVar(AName, nil, False,
+    function(AVar: TWebStencilsDataVar; const APropName: string;
+             var AOut: string): Boolean
+    begin
+      AOut := AValue;
+      Result := True;
+    end);
 end;
 
-function TRoutesContext.RenderPage(const APageTemplate: string;
+function TRoutesContext.RenderPage(const ATemplateName: string;
                                    const AVars: array of string): string;
 var
-  LLayout, LPage: string;
+  LProc: TWebStencilsProcessor;
+  I: Integer;
 begin
-  LLayout := LoadTemplate('layout.html');
-  LPage := Render(LoadTemplate(APageTemplate), AVars);
-  Result := StringReplace(LLayout, '@page', LPage, [rfReplaceAll]);
+  // Whether the layout is applied is decided by the template itself via
+  // @LayoutPage. Full pages (index.html) opt in; HTMX fragments don't.
+  LProc := TWebStencilsProcessor.Create(nil);
+  try
+    LProc.Engine := FEngine;
+    LProc.InputFileName := TPath.Combine(FTemplateDir, ATemplateName);
+    // AVars is a flat array: name1, value1, name2, value2, ...
+    I := 0;
+    while I < Length(AVars) - 1 do
+    begin
+      RegisterTemplateVar(LProc, AVars[I], AVars[I + 1]);
+      Inc(I, 2);
+    end;
+    Result := LProc.Content;
+  finally
+    LProc.Free;
+  end;
 end;
 
 function TRoutesContext.StatusText(const AStatus: TJobStatus): string;
@@ -107,18 +126,18 @@ end;
 
 function TRoutesContext.RenderError(const AMessage: string): string;
 begin
-  Result := Render(LoadTemplate('job_error.html'), ['errorText', AMessage]);
+  Result := RenderPage('job_error.html', ['errorText', AMessage]);
 end;
 
 function TRoutesContext.RenderPending(const AJob: TJob): string;
 begin
-  Result := Render(LoadTemplate('job_pending.html'),
+  Result := RenderPage('job_pending.html',
     ['jobId', AJob.Id.ToString, 'statusText', StatusText(AJob.Status)]);
 end;
 
 function TRoutesContext.RenderDone(const AJob: TJob): string;
 begin
-  Result := Render(LoadTemplate('job_done.html'),
+  Result := RenderPage('job_done.html',
     ['jobId', AJob.Id.ToString,
      'resolutionText', ResolutionToApiString(AJob.Resolution)]);
 end;
