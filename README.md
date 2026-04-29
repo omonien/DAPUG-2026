@@ -93,7 +93,7 @@ You don't need to have attended to use this repo. To work through the hands-on p
 3. **A Markdown editor** — VS Code, Notepad++, anything. Most of this repo is `.md`.
 4. **A coding agent** — at least one of:
    - [Claude Code](https://claude.com/claude-code) — see the [official setup guide](https://code.claude.com/docs/en/setup#winget) for the Windows install via `winget`
-   - [Kilo Code](https://kilocode.ai)
+   - [Kilo](https://kilo.ai/) — open-source coding agent for VS Code, JetBrains, and CLI
    - [Cline](https://cline.bot/)
    - or another agent of your choice
 5. **API access** — an API key for at least one cloud LLM (Anthropic, OpenAI, Google, Mistral). A local model via [Ollama](https://ollama.com) works as a backup.
@@ -120,9 +120,11 @@ For calling LLMs *from* Delphi code, we generally recommend:
 - [**MaxiDonkey**](https://github.com/MaxiDonkey) — a family of well-maintained Delphi wrappers for the major LLM providers ([DelphiAnthropic](https://github.com/MaxiDonkey/DelphiAnthropic), [DelphiGemini](https://github.com/MaxiDonkey/DelphiGemini), DelphiOpenAI, DelphiMistralAI, …). The `ImageUpscaleService` demo in this repo uses `DelphiGemini`.
 - [**MakerAI**](https://github.com/gustavoeenriquez/MakerAi) — a native Delphi AI framework: universal LLM connector (OpenAI, Claude, Gemini, Ollama, …), RAG, autonomous agents with semantic memory, and FMX chat UI components.
 
-### Coding agents — install
+### Coding agents
 
 - [**Claude Code (CLI)**](https://code.claude.com/docs/en/setup#winget) — official setup guide. On Windows the recommended path is `winget install Anthropic.ClaudeCode`. macOS/Linux installers are on the same page.
+- [**Kilo**](https://kilo.ai/) — open-source, model-vendor-neutral coding agent for VS Code, JetBrains IDEs, Cursor, Windsurf, and a standalone CLI. Brings ideas from Cline and Roo together with dedicated Architect / Coder / Debugger modes; works with OpenAI, Anthropic, Google, Mistral, Llama, or self-hosted models.
+- [**Kombai**](https://kombai.com/) — a *specialised* AI agent for frontend / UI work. Turns Figma files, screenshots, or text prompts into production-ready UI code, runs and fixes the result locally, and supports 25+ frontend libraries (Tailwind, MUI, shadcn, …). Available as a VS Code / Cursor / Windsurf extension. Useful when you need polished UI scaffolding alongside a generalist agent like Claude Code.
 
 ### Local & alternative models
 
