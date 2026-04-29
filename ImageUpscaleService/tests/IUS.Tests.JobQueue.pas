@@ -18,6 +18,10 @@ type
     [Test] procedure ConcurrentEnqueue_AllSucceedUpToCap;
     [Test] procedure Workers_ProcessQueuedJob_AndMarkDone;
     [Test] procedure Sweep_RemovesOldJobsAndFiles;
+    [Test] procedure NewJob_DescribeStatusIsNotRequested;
+    [Test] procedure SetDescribeRunning_TransitionsState;
+    [Test] procedure SetDescribeDone_StoresTitleAndCaption;
+    [Test] procedure SetDescribeFailed_TransitionsState;
   end;
 
 implementation
@@ -216,6 +220,77 @@ begin
     finally
       if TFile.Exists(LSrc) then TFile.Delete(LSrc);
     end;
+  finally
+    LQueue.Free;
+  end;
+end;
+
+procedure TJobQueueTests.NewJob_DescribeStatusIsNotRequested;
+var
+  LQueue: TJobQueue;
+  LId: TGuid;
+  LFetched: TJob;
+begin
+  LQueue := TJobQueue.Create(20);
+  try
+    LId := MakeJob(LQueue);
+    Assert.IsTrue(LQueue.TryGet(LId, LFetched));
+    Assert.AreEqual(Ord(TDescribeStatus.NotRequested), Ord(LFetched.DescribeStatus));
+    Assert.AreEqual('', LFetched.DescribeTitle);
+    Assert.AreEqual('', LFetched.DescribeCaption);
+  finally
+    LQueue.Free;
+  end;
+end;
+
+procedure TJobQueueTests.SetDescribeRunning_TransitionsState;
+var
+  LQueue: TJobQueue;
+  LId: TGuid;
+  LFetched: TJob;
+begin
+  LQueue := TJobQueue.Create(20);
+  try
+    LId := MakeJob(LQueue);
+    LQueue.SetDescribeRunning(LId);
+    Assert.IsTrue(LQueue.TryGet(LId, LFetched));
+    Assert.AreEqual(Ord(TDescribeStatus.Running), Ord(LFetched.DescribeStatus));
+  finally
+    LQueue.Free;
+  end;
+end;
+
+procedure TJobQueueTests.SetDescribeDone_StoresTitleAndCaption;
+var
+  LQueue: TJobQueue;
+  LId: TGuid;
+  LFetched: TJob;
+begin
+  LQueue := TJobQueue.Create(20);
+  try
+    LId := MakeJob(LQueue);
+    LQueue.SetDescribeDone(LId, 'Alpine sunset', 'Snow-capped peak in still water.');
+    Assert.IsTrue(LQueue.TryGet(LId, LFetched));
+    Assert.AreEqual(Ord(TDescribeStatus.Done), Ord(LFetched.DescribeStatus));
+    Assert.AreEqual('Alpine sunset', LFetched.DescribeTitle);
+    Assert.AreEqual('Snow-capped peak in still water.', LFetched.DescribeCaption);
+  finally
+    LQueue.Free;
+  end;
+end;
+
+procedure TJobQueueTests.SetDescribeFailed_TransitionsState;
+var
+  LQueue: TJobQueue;
+  LId: TGuid;
+  LFetched: TJob;
+begin
+  LQueue := TJobQueue.Create(20);
+  try
+    LId := MakeJob(LQueue);
+    LQueue.SetDescribeFailed(LId);
+    Assert.IsTrue(LQueue.TryGet(LId, LFetched));
+    Assert.AreEqual(Ord(TDescribeStatus.Failed), Ord(LFetched.DescribeStatus));
   finally
     LQueue.Free;
   end;

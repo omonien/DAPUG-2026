@@ -28,6 +28,8 @@ uses
 type
   TJobStatus = (Queued, Running, Done, Error);
 
+  TDescribeStatus = (NotRequested, Running, Done, Failed);
+
   TJob = record
     Id: TGuid;
     Status: TJobStatus;
@@ -37,6 +39,9 @@ type
     ResultPath: string;
     Resolution: TUpscaleResolution;
     ErrorMsg: string;
+    DescribeStatus:  TDescribeStatus;
+    DescribeTitle:   string;
+    DescribeCaption: string;
   end;
 
   TJobQueue = class
@@ -65,6 +70,9 @@ type
     procedure SetStatus(const AId: TGuid; const AStatus: TJobStatus);
     procedure SetError(const AId: TGuid; const AMessage: string);
     procedure SetResult(const AId: TGuid; const AResultPath: string);
+    procedure SetDescribeRunning(const AId: TGuid);
+    procedure SetDescribeDone(const AId: TGuid; const ATitle, ACaption: string);
+    procedure SetDescribeFailed(const AId: TGuid);
     function Count: Integer;
 
     procedure StartWorkers(const ACount: Integer;
@@ -193,6 +201,56 @@ begin
     begin
       LJob.Status := TJobStatus.Done;
       LJob.ResultPath := AResultPath;
+      FById.AddOrSetValue(AId, LJob);
+    end;
+  finally
+    FLock.Leave;
+  end;
+end;
+
+procedure TJobQueue.SetDescribeRunning(const AId: TGuid);
+var
+  LJob: TJob;
+begin
+  FLock.Enter;
+  try
+    if FById.TryGetValue(AId, LJob) then
+    begin
+      LJob.DescribeStatus := TDescribeStatus.Running;
+      FById.AddOrSetValue(AId, LJob);
+    end;
+  finally
+    FLock.Leave;
+  end;
+end;
+
+procedure TJobQueue.SetDescribeDone(const AId: TGuid; const ATitle, ACaption: string);
+var
+  LJob: TJob;
+begin
+  FLock.Enter;
+  try
+    if FById.TryGetValue(AId, LJob) then
+    begin
+      LJob.DescribeStatus  := TDescribeStatus.Done;
+      LJob.DescribeTitle   := ATitle;
+      LJob.DescribeCaption := ACaption;
+      FById.AddOrSetValue(AId, LJob);
+    end;
+  finally
+    FLock.Leave;
+  end;
+end;
+
+procedure TJobQueue.SetDescribeFailed(const AId: TGuid);
+var
+  LJob: TJob;
+begin
+  FLock.Enter;
+  try
+    if FById.TryGetValue(AId, LJob) then
+    begin
+      LJob.DescribeStatus := TDescribeStatus.Failed;
       FById.AddOrSetValue(AId, LJob);
     end;
   finally
