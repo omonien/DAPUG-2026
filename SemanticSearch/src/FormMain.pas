@@ -2,12 +2,13 @@
   /// <summary>
   ///   FormMain
   ///   FMX main form: PDF drop zone, indexed files list, query input,
-  ///   and answer display.
+  ///   answer display, and detailed progress logging.
   /// </summary>
   /// <remarks>
   ///   Thin shell over TRAGEngine. File drops and query submissions are
   ///   forwarded to the engine; results are rendered in a memo.
-  ///   Indexing runs in a background thread to keep the UI responsive.
+  ///   Indexing runs in a background thread with live progress updates
+  ///   shown in the answer memo and a progress bar.
   /// </remarks>
   /// <copyright>
   ///   Copyright (c) 2026 Olaf Monien. MIT License.
@@ -20,7 +21,8 @@ interface
 uses
   System.SysUtils, System.Classes, System.Types, System.UITypes,
   FMX.Forms, FMX.Controls, FMX.Types, FMX.Objects, FMX.StdCtrls, FMX.Layouts,
-  FMX.Memo, FMX.Edit, FMX.ListBox, FMX.ScrollBox,
+  FMX.Memo, FMX.Edit, FMX.ListBox, FMX.ScrollBox, FMX.Memo.Types,
+  FMX.Controls.Presentation,
   SS.Config, SS.RAGEngine;
 
 type
@@ -40,6 +42,7 @@ type
     Splitter: TSplitter;
     LayoutCenter: TLayout;
     LayoutLeft: TLayout;
+    ProgressBar: TProgressBar;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure DropZoneDragOver(Sender: TObject; const Data: TDragObject; const Point: TPointF; var Operation: TDragOperation);
@@ -59,6 +62,21 @@ type
     procedure StartQueryThread(const AQuestion: string);
     procedure StartReindexThread;
     procedure ShowStatus(const AMsg: string);
+    procedure LogProgress(const AMsg: string);
+    procedure ShowProgress(ACurrent, ATotal: Integer);
+    procedure HideProgress;
+    procedure RunIndex(const AFilePath: string);
+    procedure RunQuery(const AQuestion: string);
+    procedure RunReindex(const ADir: string);
+  end;
+
+  TWorkerThread = class(TThread)
+  private
+    FWorkProc: TThreadProcedure;
+  protected
+    procedure Execute; override;
+  public
+    constructor Create(AWorkProc: TThreadProcedure);
   end;
 
 var
@@ -69,16 +87,45 @@ implementation
 {$R *.fmx}
 
 uses
-  System.IOUtils;
+  System.IOUtils, System.DateUtils;
+
+{ TWorkerThread }
+
+constructor TWorkerThread.Create(AWorkProc: TThreadProcedure);
+begin
+  inherited Create(True);
+  FWorkProc := AWorkProc;
+  FreeOnTerminate := True;
+end;
+
+procedure TWorkerThread.Execute;
+begin
+  FWorkProc;
+end;
+
+{ TMainForm }
 
 procedure TMainForm.FormCreate(Sender: TObject);
+var
+  LMsg: string;
 begin
   FBusy := False;
-  LoadAppConfig;
-  FEngine := TRAGEngine.Create(FConfig);
-  RefreshFileList;
-  ShowStatus(Format('Ready. %d chunks from %d files indexed.',
-    [FEngine.GetChunkCount, Length(FEngine.GetIndexedFiles)]));
+  try
+    LoadAppConfig;
+    FEngine := TRAGEngine.Create(FConfig);
+    RefreshFileList;
+    ShowStatus(Format('Ready. %d chunks from %d files indexed.',
+      [FEngine.GetChunkCount, Length(FEngine.GetIndexedFiles)]));
+  except
+    on E: Exception do
+    begin
+      LMsg := E.Message;
+      FEngine := nil;
+      ShowStatus('Error: ' + LMsg);
+      MemoAnswer.Text := LMsg;
+      SetBusy(True);
+    end;
+  end;
 end;
 
 procedure TMainForm.FormDestroy(Sender: TObject);
@@ -90,20 +137,22 @@ procedure TMainForm.LoadAppConfig;
 var
   LConfigPath: string;
   LRoot: string;
+  LFound: Boolean;
 begin
   LRoot := ExtractFilePath(ParamStr(0));
-  LConfigPath := TPath.Combine(LRoot, 'config.ini');
-  if not TFile.Exists(LConfigPath) then
+  LFound := False;
+  while not LFound do
   begin
-    LRoot := TPath.GetDirectoryName(ExcludeTrailingPathDelimiter(LRoot));
     LConfigPath := TPath.Combine(LRoot, 'config.ini');
-  end;
-  if not TFile.Exists(LConfigPath) then
-  begin
+    if TFile.Exists(LConfigPath) then
+    begin
+      LFound := True;
+      Break;
+    end;
     LRoot := TPath.GetDirectoryName(ExcludeTrailingPathDelimiter(LRoot));
-    LConfigPath := TPath.Combine(LRoot, 'config.ini');
+    if LRoot = '' then Break;
   end;
-  if not TFile.Exists(LConfigPath) then
+  if not LFound then
     raise Exception.Create('config.ini not found. Copy config.ini.example to config.ini and fill in API keys.');
   FConfig := SS.Config.LoadConfig(LConfigPath);
 end;
@@ -114,6 +163,7 @@ var
   LFile: string;
 begin
   ListBoxFiles.Clear;
+  if FEngine = nil then Exit;
   LFiles := FEngine.GetIndexedFiles;
   for LFile in LFiles do
     ListBoxFiles.Items.Add(LFile);
@@ -145,132 +195,216 @@ begin
   LabelStatus.Text := AMsg;
 end;
 
+procedure TMainForm.LogProgress(const AMsg: string);
+begin
+  MemoAnswer.Lines.Add(FormatDateTime('hh:nn:ss', Now) + '  ' + AMsg);
+  MemoAnswer.GoToTextEnd;
+end;
+
+procedure TMainForm.ShowProgress(ACurrent, ATotal: Integer);
+begin
+  ProgressBar.Visible := True;
+  if ATotal > 0 then
+  begin
+    ProgressBar.Max := ATotal;
+    ProgressBar.Value := ACurrent;
+  end;
+end;
+
+procedure TMainForm.HideProgress;
+begin
+  ProgressBar.Visible := False;
+  ProgressBar.Value := 0;
+end;
+
+procedure TMainForm.RunIndex(const AFilePath: string);
+var
+  LProgress: TIndexProgress;
+  LErrMsg: string;
+  LOk: Boolean;
+begin
+  LProgress :=
+    procedure(AMsg: string; ACurrent, ATotal: Integer)
+    begin
+      TThread.Queue(nil,
+        procedure
+        begin
+          LogProgress(AMsg);
+          if ATotal > 0 then
+            ShowProgress(ACurrent, ATotal)
+          else
+            HideProgress;
+        end);
+    end;
+
+  LOk := False;
+  LErrMsg := '';
+  try
+    FEngine.IndexPdf(AFilePath, LProgress);
+    LOk := True;
+  except
+    on E: Exception do
+      LErrMsg := E.Message;
+  end;
+
+  TThread.Queue(nil,
+    procedure
+    begin
+      if LOk then
+      begin
+        LogProgress('Done. Index saved.');
+        RefreshFileList;
+        ShowStatus(Format('Ready. %d chunks from %d files indexed.',
+          [FEngine.GetChunkCount, Length(FEngine.GetIndexedFiles)]));
+      end
+      else
+      begin
+        LogProgress('ERROR: ' + LErrMsg);
+        ShowStatus('Error: ' + LErrMsg);
+      end;
+      HideProgress;
+      SetBusy(False);
+    end);
+end;
+
+procedure TMainForm.RunQuery(const AQuestion: string);
+var
+  LAnswer: string;
+  LErrMsg: string;
+  LOk: Boolean;
+begin
+  LOk := False;
+  LErrMsg := '';
+  LAnswer := '';
+  try
+    LAnswer := FEngine.Query(AQuestion);
+    LOk := True;
+  except
+    on E: Exception do
+      LErrMsg := E.Message;
+  end;
+
+  TThread.Queue(nil,
+    procedure
+    begin
+      if LOk then
+      begin
+        MemoAnswer.Lines.Clear;
+        MemoAnswer.Text := LAnswer;
+        ShowStatus(Format('Ready. %d chunks from %d files indexed.',
+          [FEngine.GetChunkCount, Length(FEngine.GetIndexedFiles)]));
+      end
+      else
+      begin
+        LogProgress('ERROR: ' + LErrMsg);
+        ShowStatus('Error: ' + LErrMsg);
+      end;
+      HideProgress;
+      SetBusy(False);
+    end);
+end;
+
+procedure TMainForm.RunReindex(const ADir: string);
+var
+  LProgress: TIndexProgress;
+  LErrMsg: string;
+  LOk: Boolean;
+begin
+  LProgress :=
+    procedure(AMsg: string; ACurrent, ATotal: Integer)
+    begin
+      TThread.Queue(nil,
+        procedure
+        begin
+          LogProgress(AMsg);
+          if ATotal > 0 then
+            ShowProgress(ACurrent, ATotal)
+          else
+            HideProgress;
+        end);
+    end;
+
+  LOk := False;
+  LErrMsg := '';
+  try
+    FEngine.IndexDirectory(ADir, LProgress);
+    LOk := True;
+  except
+    on E: Exception do
+      LErrMsg := E.Message;
+  end;
+
+  TThread.Queue(nil,
+    procedure
+    begin
+      if LOk then
+      begin
+        LogProgress('Done. Index saved.');
+        RefreshFileList;
+        ShowStatus(Format('Ready. %d chunks from %d files indexed.',
+          [FEngine.GetChunkCount, Length(FEngine.GetIndexedFiles)]));
+      end
+      else
+      begin
+        LogProgress('ERROR: ' + LErrMsg);
+        ShowStatus('Error: ' + LErrMsg);
+      end;
+      HideProgress;
+      SetBusy(False);
+    end);
+end;
+
 procedure TMainForm.StartIndexThread(const AFilePath: string);
 var
-  LThread: TThread;
   LFilePath: string;
+  LThread: TWorkerThread;
 begin
   LFilePath := AFilePath;
   SetBusy(True);
+  MemoAnswer.Lines.Clear;
+  LogProgress('Starting: ' + TPath.GetFileName(LFilePath));
   ShowStatus('Indexing...');
-  LThread := TThread.CreateAnonymousThread(
+  LThread := TWorkerThread.Create(
     procedure
-    var
-      LErrMsg: string;
-      LOk: Boolean;
     begin
-      LOk := False;
-      LErrMsg := '';
-      try
-        FEngine.IndexPdf(LFilePath, nil);
-        LOk := True;
-      except
-        on E: Exception do
-          LErrMsg := E.Message;
-      end;
-      TThread.Synchronize(nil,
-        procedure
-        begin
-          if LOk then
-          begin
-            RefreshFileList;
-            ShowStatus(Format('Ready. %d chunks from %d files indexed.',
-              [FEngine.GetChunkCount, Length(FEngine.GetIndexedFiles)]));
-          end
-          else
-            ShowStatus('Error: ' + LErrMsg);
-          SetBusy(False);
-        end);
+      RunIndex(LFilePath);
     end);
-  LThread.FreeOnTerminate := True;
   LThread.Start;
 end;
 
 procedure TMainForm.StartQueryThread(const AQuestion: string);
 var
-  LThread: TThread;
   LQuestion: string;
+  LThread: TWorkerThread;
 begin
   LQuestion := AQuestion;
   SetBusy(True);
-  MemoAnswer.Text := 'Searching...';
+  MemoAnswer.Lines.Clear;
+  LogProgress('Searching: ' + LQuestion);
   ShowStatus('Querying...');
-  LThread := TThread.CreateAnonymousThread(
+  LThread := TWorkerThread.Create(
     procedure
-    var
-      LAnswer: string;
-      LErrMsg: string;
-      LOk: Boolean;
     begin
-      LOk := False;
-      LErrMsg := '';
-      LAnswer := '';
-      try
-        LAnswer := FEngine.Query(LQuestion);
-        LOk := True;
-      except
-        on E: Exception do
-          LErrMsg := E.Message;
-      end;
-      TThread.Synchronize(nil,
-        procedure
-        begin
-          if LOk then
-          begin
-            MemoAnswer.Text := LAnswer;
-            ShowStatus(Format('Ready. %d chunks from %d files indexed.',
-              [FEngine.GetChunkCount, Length(FEngine.GetIndexedFiles)]));
-          end
-          else
-          begin
-            MemoAnswer.Text := 'Error: ' + LErrMsg;
-            ShowStatus('Error: ' + LErrMsg);
-          end;
-          SetBusy(False);
-        end);
+      RunQuery(LQuestion);
     end);
-  LThread.FreeOnTerminate := True;
   LThread.Start;
 end;
 
 procedure TMainForm.StartReindexThread;
 var
-  LThread: TThread;
   LDir: string;
+  LThread: TWorkerThread;
 begin
   LDir := ResolvePath(FConfig.PdfDir, '');
   SetBusy(True);
+  MemoAnswer.Lines.Clear;
+  LogProgress('Re-indexing: ' + LDir);
   ShowStatus('Re-indexing PDF directory...');
-  LThread := TThread.CreateAnonymousThread(
+  LThread := TWorkerThread.Create(
     procedure
-    var
-      LErrMsg: string;
-      LOk: Boolean;
     begin
-      LOk := False;
-      LErrMsg := '';
-      try
-        FEngine.IndexDirectory(LDir, nil);
-        LOk := True;
-      except
-        on E: Exception do
-          LErrMsg := E.Message;
-      end;
-      TThread.Synchronize(nil,
-        procedure
-        begin
-          if LOk then
-          begin
-            RefreshFileList;
-            ShowStatus(Format('Ready. %d chunks from %d files indexed.',
-              [FEngine.GetChunkCount, Length(FEngine.GetIndexedFiles)]));
-          end
-          else
-            ShowStatus('Error: ' + LErrMsg);
-          SetBusy(False);
-        end);
+      RunReindex(LDir);
     end);
-  LThread.FreeOnTerminate := True;
   LThread.Start;
 end;
 
@@ -300,6 +434,7 @@ procedure TMainForm.DropZoneDragDrop(Sender: TObject; const Data: TDragObject;
 var
   LFile: string;
 begin
+  if FEngine = nil then Exit;
   for LFile in Data.Files do
   begin
     if SameText(TPath.GetExtension(LFile), '.pdf') then
@@ -315,6 +450,7 @@ procedure TMainForm.ButtonSearchClick(Sender: TObject);
 var
   LQuestion: string;
 begin
+  if FEngine = nil then Exit;
   LQuestion := Trim(EditQuery.Text);
   if LQuestion = '' then Exit;
   if FEngine.GetChunkCount = 0 then
@@ -334,6 +470,7 @@ end;
 
 procedure TMainForm.ButtonReindexClick(Sender: TObject);
 begin
+  if FEngine = nil then Exit;
   StartReindexThread;
 end;
 

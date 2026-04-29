@@ -1,24 +1,26 @@
 object MainForm: TMainForm
   Left = 0
   Top = 0
+  BorderStyle = Single
   Caption = 'SemanticSearch'
   ClientHeight = 600
   ClientWidth = 900
+  Position = ScreenCenter
   FormFactor.Width = 900
   FormFactor.Height = 600
   FormFactor.Devices = [Desktop]
-  BorderStyle = Single
-  Position = ScreenCenter
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   DesignerMasterStyle = 0
   object LayoutTop: TLayout
     Align = Top
-    Size.Height = 100.000000000000000000
     Size.Width = 900.000000000000000000
+    Size.Height = 100.000000000000000000
     Size.PlatformDefault = False
+    TabOrder = 0
     object DropZone: TRectangle
       Align = Client
+      Fill.Color = claWhitesmoke
       Margins.Left = 8.000000000000000000
       Margins.Top = 8.000000000000000000
       Margins.Right = 8.000000000000000000
@@ -26,12 +28,10 @@ object MainForm: TMainForm
       Size.Width = 884.000000000000000000
       Size.Height = 84.000000000000000000
       Size.PlatformDefault = False
-      Stroke.Dash = Dash
       Stroke.Color = claDarkgray
-      Fill.Color = claWhitesmoke
+      Stroke.Dash = Dash
       XRadius = 12.000000000000000000
       YRadius = 12.000000000000000000
-      HitTest = True
       OnDragOver = DropZoneDragOver
       OnDragDrop = DropZoneDragDrop
       object LabelDropTitle: TLabel
@@ -39,41 +39,48 @@ object MainForm: TMainForm
         Size.Width = 300.000000000000000000
         Size.Height = 32.000000000000000000
         Size.PlatformDefault = False
-        TextSettings.HorzAlign = Center
         TextSettings.Font.Size = 16.000000000000000000
+        TextSettings.HorzAlign = Center
         Text = 'Drop PDF files here'
       end
       object LabelDropHint: TLabel
         Align = Bottom
         Margins.Bottom = 8.000000000000000000
+        Position.Y = 56.000000000000000000
+        Size.Width = 884.000000000000000000
         Size.Height = 20.000000000000000000
         Size.PlatformDefault = False
-        TextSettings.HorzAlign = Center
         TextSettings.Font.Size = 10.000000000000000000
         TextSettings.FontColor = claGray
-        Text = 'PDF files will be copied, extracted, chunked, and embedded for semantic search.'
+        TextSettings.HorzAlign = Center
+        Text = 
+          'PDF files will be copied, extracted, chunked, and embedded for s' +
+          'emantic search.'
       end
     end
   end
   object LayoutCenter: TLayout
     Align = Client
     Size.Width = 900.000000000000000000
-    Size.Height = 458.000000000000000000
+    Size.Height = 442.000000000000000000
     Size.PlatformDefault = False
+    TabOrder = 1
     object LayoutLeft: TLayout
       Align = Left
       Size.Width = 220.000000000000000000
-      Size.Height = 458.000000000000000000
+      Size.Height = 442.000000000000000000
       Size.PlatformDefault = False
       object LabelFilesTitle: TLabel
         Align = Top
         Margins.Left = 8.000000000000000000
         Margins.Top = 4.000000000000000000
         Margins.Right = 4.000000000000000000
+        Position.X = 8.000000000000000000
+        Position.Y = 4.000000000000000000
+        Size.Width = 208.000000000000000000
         Size.Height = 22.000000000000000000
         Size.PlatformDefault = False
-        TextSettings.Font.Size = 12.000000000000000000
-        TextSettings.Font.Style = [fsBold]
+        TextSettings.Font.StyleExt = {00070000000000000004000000}
         Text = 'Indexed Files'
       end
       object ListBoxFiles: TListBox
@@ -81,17 +88,22 @@ object MainForm: TMainForm
         Margins.Left = 8.000000000000000000
         Margins.Right = 4.000000000000000000
         Size.Width = 208.000000000000000000
-        Size.Height = 395.000000000000000000
+        Size.Height = 380.000000000000000000
         Size.PlatformDefault = False
+        DisableFocusEffect = True
         DefaultItemStyles.ItemStyle = ''
         DefaultItemStyles.GroupHeaderStyle = ''
         DefaultItemStyles.GroupFooterStyle = ''
+        Viewport.Width = 204.000000000000000000
+        Viewport.Height = 376.000000000000000000
       end
       object ButtonReindex: TButton
         Align = Bottom
         Margins.Left = 8.000000000000000000
         Margins.Right = 4.000000000000000000
         Margins.Bottom = 4.000000000000000000
+        Position.X = 8.000000000000000000
+        Position.Y = 406.000000000000000000
         Size.Width = 208.000000000000000000
         Size.Height = 32.000000000000000000
         Size.PlatformDefault = False
@@ -102,32 +114,40 @@ object MainForm: TMainForm
     end
     object Splitter: TSplitter
       Align = Left
+      Cursor = crHSplit
+      MinSize = 100.000000000000000000
       Margins.Top = 4.000000000000000000
       Margins.Bottom = 4.000000000000000000
+      Position.X = 220.000000000000000000
+      Position.Y = 4.000000000000000000
       Size.Width = 8.000000000000000000
-      Size.Height = 450.000000000000000000
+      Size.Height = 434.000000000000000000
       Size.PlatformDefault = False
-      MinSize = 100.000000000000000000
     end
     object MemoAnswer: TMemo
+      Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
+      DataDetectorTypes = []
+      ReadOnly = True
       Align = Client
       Margins.Right = 8.000000000000000000
       Size.Width = 664.000000000000000000
-      Size.Height = 458.000000000000000000
+      Size.Height = 442.000000000000000000
       Size.PlatformDefault = False
-      ReadOnly = True
-      ShowScrollBars = True
-      TextSettings.Font.Size = 12.000000000000000000
-      Text = ''
+      Viewport.Width = 660.000000000000000000
+      Viewport.Height = 438.000000000000000000
     end
   end
   object LayoutBottom: TLayout
     Align = Bottom
-    Size.Height = 42.000000000000000000
+    Position.Y = 542.000000000000000000
     Size.Width = 900.000000000000000000
+    Size.Height = 42.000000000000000000
     Size.PlatformDefault = False
+    TabOrder = 2
     object EditQuery: TEdit
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
       Align = Client
+      TextSettings.Font.Size = 13.000000000000000000
       Margins.Left = 8.000000000000000000
       Margins.Top = 4.000000000000000000
       Margins.Right = 4.000000000000000000
@@ -135,7 +155,6 @@ object MainForm: TMainForm
       Size.Width = 790.000000000000000000
       Size.Height = 34.000000000000000000
       Size.PlatformDefault = False
-      TextSettings.Font.Size = 13.000000000000000000
       TextPrompt = 'Ask a question about your documents...'
       OnKeyDown = EditQueryKeyDown
     end
@@ -144,6 +163,8 @@ object MainForm: TMainForm
       Margins.Top = 4.000000000000000000
       Margins.Right = 8.000000000000000000
       Margins.Bottom = 4.000000000000000000
+      Position.X = 802.000000000000000000
+      Position.Y = 4.000000000000000000
       Size.Width = 90.000000000000000000
       Size.Height = 34.000000000000000000
       Size.PlatformDefault = False
@@ -155,11 +176,25 @@ object MainForm: TMainForm
   object LabelStatus: TLabel
     Align = MostBottom
     Margins.Left = 8.000000000000000000
-    Margins.Bottom = 0.000000000000000000
+    Position.X = 8.000000000000000000
+    Position.Y = 584.000000000000000000
+    Size.Width = 892.000000000000000000
     Size.Height = 16.000000000000000000
     Size.PlatformDefault = False
     TextSettings.Font.Size = 9.000000000000000000
     TextSettings.FontColor = claGray
     Text = 'Loading...'
+    TabOrder = 3
+  end
+  object ProgressBar: TProgressBar
+    Align = MostBottom
+    Margins.Left = 8.000000000000000000
+    Margins.Right = 8.000000000000000000
+    Position.Y = 568.000000000000000000
+    Size.Width = 884.000000000000000000
+    Size.Height = 14.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 4
+    Visible = False
   end
 end
