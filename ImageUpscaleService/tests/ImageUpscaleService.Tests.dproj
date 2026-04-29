@@ -101,6 +101,9 @@
         <DCCReference Include="IUS.Tests.Smoke.pas"/>
         <DCCReference Include="..\src\IUS.DescribePrompt.pas"/>
         <DCCReference Include="IUS.Tests.DescribePrompt.pas"/>
+        <DCCReference Include="..\src\IUS.Describer.Intf.pas"/>
+        <DCCReference Include="..\src\IUS.Describer.Fake.pas"/>
+        <DCCReference Include="IUS.Tests.Describer.Fake.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
