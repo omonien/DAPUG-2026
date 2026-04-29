@@ -1,7 +1,13 @@
-<div hx-get="/jobs/@jobId"
+<div class="pending-state"
+     hx-get="/jobs/@jobId"
      hx-target="#content"
      hx-swap="innerHTML"
      hx-trigger="load delay:1s, every 1s">
-  <p><span class="spinner"></span> &nbsp; @statusText&hellip;</p>
-  <p class="muted">Job <code>@jobId</code></p>
+  <div class="pending-animation">
+    <div class="pending-dot"></div>
+    <div class="pending-dot"></div>
+    <div class="pending-dot"></div>
+  </div>
+  <div class="pending-status">@statusText&hellip;</div>
+  <div class="pending-job-id">Job <code>@jobId</code></div>
 </div>

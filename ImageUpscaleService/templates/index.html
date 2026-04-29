@@ -3,17 +3,102 @@
       hx-encoding="multipart/form-data"
       hx-target="#content"
       hx-swap="innerHTML">
-  <div class="row">
-    <label>Image (JPEG / PNG / WebP, max 10 MB)</label>
-    <input type="file" name="image" accept="image/jpeg,image/png,image/webp" required>
-  </div>
-  <div class="row">
-    <label>Output resolution</label>
-    <div class="radios">
-      <label><input type="radio" name="resolution" value="1K"> 1K — faster, lighter</label>
-      <label><input type="radio" name="resolution" value="2K" checked> 2K — balanced</label>
-      <label><input type="radio" name="resolution" value="4K"> 4K — highest quality, slowest</label>
+
+  <div class="form-section">
+    <label class="form-label" for="image-input">Upload Image</label>
+    <div class="dropzone" id="dropzone">
+      <div class="dropzone-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      </div>
+      <div class="dropzone-text">Drop your image here, or <strong>browse files</strong></div>
+      <div class="dropzone-hint">JPEG, PNG, or WebP &mdash; max 10 MB</div>
+      <input type="file" name="image" id="image-input" accept="image/jpeg,image/png,image/webp" required>
+    </div>
+    <div class="file-preview" id="file-preview">
+      <img class="file-preview-thumb" id="preview-thumb" src="" alt="Preview">
+      <div class="file-preview-info">
+        <div class="file-preview-name" id="preview-name"></div>
+        <div class="file-preview-size" id="preview-size"></div>
+      </div>
+      <button type="button" class="file-preview-remove" id="preview-remove" aria-label="Remove file">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
     </div>
   </div>
-  <button type="submit">Upscale</button>
+
+  <div class="form-section">
+    <span class="form-label">Output Resolution</span>
+    <div class="resolution-cards">
+      <label class="res-card">
+        <input type="radio" name="resolution" value="1K">
+        <div class="res-card-inner">
+          <div class="res-card-tier">1K</div>
+          <div class="res-card-desc">Faster, lighter</div>
+        </div>
+      </label>
+      <label class="res-card">
+        <input type="radio" name="resolution" value="2K" checked>
+        <div class="res-card-inner">
+          <div class="res-card-tier">2K</div>
+          <div class="res-card-desc">Balanced</div>
+        </div>
+      </label>
+      <label class="res-card">
+        <input type="radio" name="resolution" value="4K">
+        <div class="res-card-inner">
+          <div class="res-card-tier">4K</div>
+          <div class="res-card-desc">Highest quality</div>
+        </div>
+      </label>
+    </div>
+  </div>
+
+  <button type="submit" class="btn btn-primary">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+    Upscale Image
+  </button>
 </form>
+
+<script>
+(function(){
+  var dz = document.getElementById('dropzone');
+  var inp = document.getElementById('image-input');
+  var fp = document.getElementById('file-preview');
+  var thumb = document.getElementById('preview-thumb');
+  var fname = document.getElementById('preview-name');
+  var fsize = document.getElementById('preview-size');
+  var rmBtn = document.getElementById('preview-remove');
+
+  function formatSize(b){
+    if(b<1024)return b+' B';
+    if(b<1048576)return (b/1024).toFixed(1)+' KB';
+    return (b/1048576).toFixed(1)+' MB';
+  }
+  function showPreview(file){
+    fname.textContent=file.name;
+    fsize.textContent=formatSize(file.size);
+    var r=new FileReader();
+    r.onload=function(e){thumb.src=e.target.result;};
+    r.readAsDataURL(file);
+    fp.classList.add('show');
+  }
+  function clearPreview(){
+    fp.classList.remove('show');
+    thumb.src='';
+    inp.value='';
+  }
+
+  inp.addEventListener('change',function(){
+    if(inp.files.length)showPreview(inp.files[0]);
+    else clearPreview();
+  });
+  rmBtn.addEventListener('click',clearPreview);
+
+  dz.addEventListener('dragover',function(e){e.preventDefault();dz.classList.add('dragover');});
+  dz.addEventListener('dragleave',function(){dz.classList.remove('dragover');});
+  dz.addEventListener('drop',function(e){
+    e.preventDefault();dz.classList.remove('dragover');
+    if(e.dataTransfer.files.length){inp.files=e.dataTransfer.files;showPreview(e.dataTransfer.files[0]);}
+  });
+})();
+</script>

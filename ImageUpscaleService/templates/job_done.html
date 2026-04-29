@@ -1,16 +1,28 @@
-<div>
-  <div class="before-after">
-    <div>
-      <img src="/original/@jobId" alt="Original">
-      <div class="caption">Original</div>
+<div class="result-section">
+  <div class="compare-grid">
+    <div class="compare-item">
+      <img src="/original/@jobId" alt="Original image before upscaling">
+      <div class="compare-label">
+        <span class="badge badge-original">Before</span>
+        Original
+      </div>
     </div>
-    <div>
-      <img src="/result/@jobId" alt="Remastered">
-      <div class="caption">Remastered at @resolutionText</div>
+    <div class="compare-item">
+      <img src="/result/@jobId" alt="Remastered image at @resolutionText resolution">
+      <div class="compare-label">
+        <span class="badge badge-result">After</span>
+        Remastered &middot; @resolutionText
+      </div>
     </div>
   </div>
-  <div class="actions">
-    <a href="/result/@jobId" download="upscaled.png"><button type="button">Download</button></a>
-    <a hx-get="/" hx-target="#content" hx-swap="innerHTML" href="#">Try another</a>
+  <div class="actions-row">
+    <a href="/result/@jobId" download="upscaled.png" class="btn btn-primary">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Download Result
+    </a>
+    <a hx-get="/" hx-target="#content" hx-swap="innerHTML" href="#" class="btn btn-ghost">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+      Try Another
+    </a>
   </div>
 </div>
