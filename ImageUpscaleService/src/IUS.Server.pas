@@ -34,7 +34,8 @@ uses
   Horse,
   IUS.Config, IUS.JobQueue, IUS.Routes, IUS.Storage,
   IUS.Upscaler.Intf, IUS.Upscaler.Native, IUS.Upscaler.DelphiGemini,
-  IUS.Prompt;
+  IUS.Prompt,
+  IUS.Describer.Intf, IUS.Describer.Native, IUS.DescribePrompt;
 
 /// <summary>Walk up from the exe at most 5 levels until a folder containing
 ///   `templates/` is found. Handles both "exe is next to templates" (typical
@@ -71,6 +72,11 @@ begin
   Result := TPath.Combine(AProjectRoot, 'config.ini');
 end;
 
+function BuildDescriber(const ACfg: TConfig): IDescriber;
+begin
+  Result := TNativeDescriber.Create(ACfg.ApiKey, ACfg.DescribeModel);
+end;
+
 function BuildUpscaler(const ACfg: TConfig): IUpscaler;
 begin
   if ACfg.Provider = 'native' then
@@ -95,6 +101,7 @@ var
   LQueue: TJobQueue;
   LRoutes: TRoutesContext;
   LUpscaler: IUpscaler;
+  LDescriber: IDescriber;
   LRoot, LConfigPath, LUploadDir, LResultDir: string;
 begin
   LRoot := FindProjectRoot;
@@ -113,6 +120,7 @@ begin
   EnsureDirectory(LResultDir);
 
   LUpscaler := BuildUpscaler(LCfg);
+  LDescriber := BuildDescriber(LCfg);
   LQueue := TJobQueue.Create(20);
   LRoutes := TRoutesContext.Create(LQueue,
     TPath.Combine(LRoot, 'templates'),
@@ -134,12 +142,14 @@ begin
       end);
 
     LRoutes.Register;
-    LQueue.StartWorkers(3, LUpscaler, LResultDir);
+    LQueue.StartWorkers(3, LUpscaler, LDescriber, LResultDir);
     LQueue.StartCleanup(LUploadDir, LCfg.RetentionMinutes);
 
     Writeln(Format('Project root:    %s', [LRoot]));
     Writeln(Format('Config:          %s', [LConfigPath]));
     Writeln(Format('Uploads / results: %s | %s', [LUploadDir, LResultDir]));
+    Writeln(Format('Upscaler model:  %s', [LCfg.Model]));
+    Writeln(Format('Describer model: %s', [LCfg.DescribeModel]));
     Writeln(Format('ImageUpscaleService listening on http://localhost:%d  (upscaler=%s)',
       [LCfg.Port, LCfg.Provider]));
     THorse.Listen(LCfg.Port);

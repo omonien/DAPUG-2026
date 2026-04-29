@@ -26,7 +26,8 @@ uses
   System.SysUtils, System.Classes, System.SyncObjs, System.IOUtils,
   System.Net.HttpClient, System.Net.URLClient,
   Horse,
-  IUS.JobQueue, IUS.Routes, IUS.Upscaler.Intf, IUS.Upscaler.Fake;
+  IUS.JobQueue, IUS.Routes, IUS.Upscaler.Intf, IUS.Upscaler.Fake,
+  IUS.Describer.Intf, IUS.Describer.Fake;
 
 const
   cTestPort = 18080;
@@ -53,6 +54,7 @@ type
   strict private
     FQueue: TJobQueue;
     FFake: IUpscaler;
+    FFakeDesc: IDescriber;
     FRoutes: TRoutesContext;
     FReady: TEvent;
     FThread: TThread;
@@ -71,6 +73,7 @@ begin
   inherited;
   FQueue := TJobQueue.Create(20);
   FFake := TFakeUpscaler.Create;
+  FFakeDesc := TFakeDescriber.Create;
   FRoutes := TRoutesContext.Create(FQueue, TemplateDir, StaticDir,
     TPath.Combine(ProjectRoot, 'var\uploads_smoke'),
     TPath.Combine(ProjectRoot, 'var\results_smoke'));
@@ -91,7 +94,7 @@ var
   LReady: TEvent;
 begin
   FRoutes.Register;
-  FQueue.StartWorkers(1, FFake, TPath.Combine(ProjectRoot, 'var\results_smoke'));
+  FQueue.StartWorkers(1, FFake, FFakeDesc, TPath.Combine(ProjectRoot, 'var\results_smoke'));
   LReady := FReady;
   FThread := TThread.CreateAnonymousThread(
     procedure
