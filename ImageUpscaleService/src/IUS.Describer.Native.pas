@@ -110,9 +110,49 @@ begin
 end;
 
 function TNativeDescriber.ExtractDescription(const AResponseBody: string): TDescription;
+var
+  LRoot, LCandidate, LContent, LPart, LInner: TJSONObject;
+  LCandidates, LParts: TJSONArray;
+  LText: string;
+  I: Integer;
 begin
-  // Implemented in Task 5.
-  raise EDescriberEmptyResultError.Create('not implemented yet');
+  LRoot := TJSONObject.ParseJSONValue(AResponseBody) as TJSONObject;
+  if LRoot = nil then
+    raise EDescriberEmptyResultError.Create('Response is not valid JSON');
+  try
+    LCandidates := LRoot.GetValue<TJSONArray>('candidates');
+    if (LCandidates = nil) or (LCandidates.Count = 0) then
+      raise EDescriberEmptyResultError.Create('No candidates in response');
+    LCandidate := LCandidates.Items[0] as TJSONObject;
+    LContent := LCandidate.GetValue<TJSONObject>('content');
+    LParts := LContent.GetValue<TJSONArray>('parts');
+    LText := '';
+    for I := 0 to LParts.Count - 1 do
+    begin
+      LPart := LParts.Items[I] as TJSONObject;
+      if LPart.TryGetValue<string>('text', LText) and (LText <> '') then
+        Break;
+    end;
+    if LText = '' then
+      raise EDescriberEmptyResultError.Create('No text part in response');
+
+    // The text part itself is the JSON object enforced by responseSchema.
+    LInner := TJSONObject.ParseJSONValue(LText) as TJSONObject;
+    if LInner = nil then
+      raise EDescriberEmptyResultError.Create('Inner text is not JSON');
+    try
+      if not LInner.TryGetValue<string>('title', Result.Title) or
+         (Trim(Result.Title) = '') then
+        raise EDescriberEmptyResultError.Create('Missing title field');
+      if not LInner.TryGetValue<string>('caption', Result.Caption) or
+         (Trim(Result.Caption) = '') then
+        raise EDescriberEmptyResultError.Create('Missing caption field');
+    finally
+      LInner.Free;
+    end;
+  finally
+    LRoot.Free;
+  end;
 end;
 
 function TNativeDescriber.Describe(const AImage: TBytes;
