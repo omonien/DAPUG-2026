@@ -18,7 +18,7 @@ unit SS.Embedding;
 interface
 
 uses
-  System.SysUtils, System.Classes, System.JSON,
+  System.SysUtils, System.Classes, System.JSON, System.Generics.Collections,
   System.Net.HttpClient, System.Net.HttpClientComponent, System.Net.URLClient;
 
 type
