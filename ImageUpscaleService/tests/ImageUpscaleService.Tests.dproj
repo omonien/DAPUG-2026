@@ -99,6 +99,8 @@
         <DCCReference Include="..\src\IUS.Upscaler.DelphiGemini.pas"/>
         <DCCReference Include="..\src\IUS.Routes.pas"/>
         <DCCReference Include="IUS.Tests.Smoke.pas"/>
+        <DCCReference Include="..\src\IUS.DescribePrompt.pas"/>
+        <DCCReference Include="IUS.Tests.DescribePrompt.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
