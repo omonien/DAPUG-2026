@@ -17,6 +17,8 @@ type
     [Test] procedure ExtractDescription_RaisesEmptyResult_WhenNoCandidates;
     [Test] procedure ExtractDescription_RaisesEmptyResult_WhenJsonInvalid;
     [Test] procedure ExtractDescription_RaisesEmptyResult_WhenMissingTitle;
+    [Test] procedure ExtractDescription_RaisesEmptyResult_WhenMissingCaption;
+    [Test] procedure ExtractDescription_RaisesEmptyResult_WhenSafetyBlocked;
   end;
 
 implementation
@@ -151,6 +153,42 @@ const
   cResponse =
     '{"candidates":[{"content":{"parts":[{"text":' +
     '"{\"caption\":\"only a caption\"}"}]}}]}';
+begin
+  LDescriber := MakeDescriber;
+  try
+    Assert.WillRaise(
+      procedure begin LDescriber.ExtractDescription(cResponse); end,
+      EDescriberEmptyResultError);
+  finally
+    LDescriber.Free;
+  end;
+end;
+
+procedure TNativeDescriberTests.ExtractDescription_RaisesEmptyResult_WhenMissingCaption;
+var LDescriber: TNativeDescriber;
+const
+  cResponse =
+    '{"candidates":[{"content":{"parts":[{"text":' +
+    '"{\"title\":\"only a title\"}"}]}}]}';
+begin
+  LDescriber := MakeDescriber;
+  try
+    Assert.WillRaise(
+      procedure begin LDescriber.ExtractDescription(cResponse); end,
+      EDescriberEmptyResultError);
+  finally
+    LDescriber.Free;
+  end;
+end;
+
+procedure TNativeDescriberTests.ExtractDescription_RaisesEmptyResult_WhenSafetyBlocked;
+var LDescriber: TNativeDescriber;
+const
+  // A safety-blocked candidate carries finishReason + safetyRatings but no
+  // 'content' field. Must surface as EDescriberEmptyResultError (not AV).
+  cResponse =
+    '{"candidates":[{"finishReason":"SAFETY",' +
+    '"safetyRatings":[{"category":"X","probability":"HIGH"}]}]}';
 begin
   LDescriber := MakeDescriber;
   try

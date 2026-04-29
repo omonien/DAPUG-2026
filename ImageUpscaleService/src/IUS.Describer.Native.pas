@@ -124,8 +124,16 @@ begin
     if (LCandidates = nil) or (LCandidates.Count = 0) then
       raise EDescriberEmptyResultError.Create('No candidates in response');
     LCandidate := LCandidates.Items[0] as TJSONObject;
-    LContent := LCandidate.GetValue<TJSONObject>('content');
-    LParts := LContent.GetValue<TJSONArray>('parts');
+    // A safety-blocked candidate has no 'content' field at all (it carries
+    // finishReason + safetyRatings instead). Treat that as an empty result
+    // so the worker's silent soft-fail catches it rather than dereferencing
+    // nil and propagating an AV.
+    if not LCandidate.TryGetValue<TJSONObject>('content', LContent) or
+       (LContent = nil) then
+      raise EDescriberEmptyResultError.Create('No content in candidate');
+    if not LContent.TryGetValue<TJSONArray>('parts', LParts) or
+       (LParts = nil) then
+      raise EDescriberEmptyResultError.Create('No parts in content');
     LText := '';
     for I := 0 to LParts.Count - 1 do
     begin
@@ -137,10 +145,12 @@ begin
       raise EDescriberEmptyResultError.Create('No text part in response');
 
     // The text part itself is the JSON object enforced by responseSchema.
+    // Free is nil-safe in Delphi, so the try/finally covers both the
+    // successful-parse path and the failed-parse path uniformly.
     LInner := TJSONObject.ParseJSONValue(LText) as TJSONObject;
-    if LInner = nil then
-      raise EDescriberEmptyResultError.Create('Inner text is not JSON');
     try
+      if LInner = nil then
+        raise EDescriberEmptyResultError.Create('Inner text is not JSON');
       if not LInner.TryGetValue<string>('title', Result.Title) or
          (Trim(Result.Title) = '') then
         raise EDescriberEmptyResultError.Create('Missing title field');
