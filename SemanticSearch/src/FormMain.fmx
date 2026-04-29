@@ -1,0 +1,165 @@
+object MainForm: TMainForm
+  Left = 0
+  Top = 0
+  Caption = 'SemanticSearch'
+  ClientHeight = 600
+  ClientWidth = 900
+  FormFactor.Width = 900
+  FormFactor.Height = 600
+  FormFactor.Devices = [Desktop]
+  BorderStyle = Single
+  Position = ScreenCenter
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  DesignerMasterStyle = 0
+  object LayoutTop: TLayout
+    Align = Top
+    Size.Height = 100.000000000000000000
+    Size.Width = 900.000000000000000000
+    Size.PlatformDefault = False
+    object DropZone: TRectangle
+      Align = Client
+      Margins.Left = 8.000000000000000000
+      Margins.Top = 8.000000000000000000
+      Margins.Right = 8.000000000000000000
+      Margins.Bottom = 8.000000000000000000
+      Size.Width = 884.000000000000000000
+      Size.Height = 84.000000000000000000
+      Size.PlatformDefault = False
+      Stroke.Dash = Dash
+      Stroke.Color = claDarkgray
+      Fill.Color = claWhitesmoke
+      XRadius = 12.000000000000000000
+      YRadius = 12.000000000000000000
+      HitTest = True
+      OnDragOver = DropZoneDragOver
+      OnDragDrop = DropZoneDragDrop
+      object LabelDropTitle: TLabel
+        Align = Center
+        Size.Width = 300.000000000000000000
+        Size.Height = 32.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.HorzAlign = Center
+        TextSettings.Font.Size = 16.000000000000000000
+        Text = 'Drop PDF files here'
+      end
+      object LabelDropHint: TLabel
+        Align = Bottom
+        Margins.Bottom = 8.000000000000000000
+        Size.Height = 20.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.HorzAlign = Center
+        TextSettings.Font.Size = 10.000000000000000000
+        TextSettings.FontColor = claGray
+        Text = 'PDF files will be copied, extracted, chunked, and embedded for semantic search.'
+      end
+    end
+  end
+  object LayoutCenter: TLayout
+    Align = Client
+    Size.Width = 900.000000000000000000
+    Size.Height = 458.000000000000000000
+    Size.PlatformDefault = False
+    object LayoutLeft: TLayout
+      Align = Left
+      Size.Width = 220.000000000000000000
+      Size.Height = 458.000000000000000000
+      Size.PlatformDefault = False
+      object LabelFilesTitle: TLabel
+        Align = Top
+        Margins.Left = 8.000000000000000000
+        Margins.Top = 4.000000000000000000
+        Margins.Right = 4.000000000000000000
+        Size.Height = 22.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.Font.Size = 12.000000000000000000
+        TextSettings.Font.Style = [fsBold]
+        Text = 'Indexed Files'
+      end
+      object ListBoxFiles: TListBox
+        Align = Client
+        Margins.Left = 8.000000000000000000
+        Margins.Right = 4.000000000000000000
+        Size.Width = 208.000000000000000000
+        Size.Height = 395.000000000000000000
+        Size.PlatformDefault = False
+        DefaultItemStyles.ItemStyle = ''
+        DefaultItemStyles.GroupHeaderStyle = ''
+        DefaultItemStyles.GroupFooterStyle = ''
+      end
+      object ButtonReindex: TButton
+        Align = Bottom
+        Margins.Left = 8.000000000000000000
+        Margins.Right = 4.000000000000000000
+        Margins.Bottom = 4.000000000000000000
+        Size.Width = 208.000000000000000000
+        Size.Height = 32.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 1
+        Text = 'Re-index All'
+        OnClick = ButtonReindexClick
+      end
+    end
+    object Splitter: TSplitter
+      Align = Left
+      Margins.Top = 4.000000000000000000
+      Margins.Bottom = 4.000000000000000000
+      Size.Width = 8.000000000000000000
+      Size.Height = 450.000000000000000000
+      Size.PlatformDefault = False
+      MinSize = 100.000000000000000000
+    end
+    object MemoAnswer: TMemo
+      Align = Client
+      Margins.Right = 8.000000000000000000
+      Size.Width = 664.000000000000000000
+      Size.Height = 458.000000000000000000
+      Size.PlatformDefault = False
+      ReadOnly = True
+      ShowScrollBars = True
+      TextSettings.Font.Size = 12.000000000000000000
+      Text = ''
+    end
+  end
+  object LayoutBottom: TLayout
+    Align = Bottom
+    Size.Height = 42.000000000000000000
+    Size.Width = 900.000000000000000000
+    Size.PlatformDefault = False
+    object EditQuery: TEdit
+      Align = Client
+      Margins.Left = 8.000000000000000000
+      Margins.Top = 4.000000000000000000
+      Margins.Right = 4.000000000000000000
+      Margins.Bottom = 4.000000000000000000
+      Size.Width = 790.000000000000000000
+      Size.Height = 34.000000000000000000
+      Size.PlatformDefault = False
+      TextSettings.Font.Size = 13.000000000000000000
+      TextPrompt = 'Ask a question about your documents...'
+      OnKeyDown = EditQueryKeyDown
+    end
+    object ButtonSearch: TButton
+      Align = Right
+      Margins.Top = 4.000000000000000000
+      Margins.Right = 8.000000000000000000
+      Margins.Bottom = 4.000000000000000000
+      Size.Width = 90.000000000000000000
+      Size.Height = 34.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 1
+      Text = 'Search'
+      OnClick = ButtonSearchClick
+    end
+  end
+  object LabelStatus: TLabel
+    Align = MostBottom
+    Margins.Left = 8.000000000000000000
+    Margins.Bottom = 0.000000000000000000
+    Size.Height = 16.000000000000000000
+    Size.PlatformDefault = False
+    TextSettings.Font.Size = 9.000000000000000000
+    TextSettings.FontColor = claGray
+    Text = 'Loading...'
+  end
+end
