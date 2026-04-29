@@ -14,7 +14,8 @@ uses
   IUS.Upscaler.Intf in 'src\IUS.Upscaler.Intf.pas',
   IUS.Upscaler.Fake in 'src\IUS.Upscaler.Fake.pas',
   IUS.Upscaler.Native in 'src\IUS.Upscaler.Native.pas',
-  IUS.Upscaler.DelphiGemini in 'src\IUS.Upscaler.DelphiGemini.pas';
+  IUS.Upscaler.DelphiGemini in 'src\IUS.Upscaler.DelphiGemini.pas',
+  IUS.Describer.Intf in 'src\IUS.Describer.Intf.pas';
 
 begin
   try
