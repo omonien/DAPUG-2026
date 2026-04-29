@@ -1,0 +1,31 @@
+; SemanticSearch configuration template.
+; Copy this file to config.ini and fill in your API keys.
+; config.ini is gitignored. Never commit it.
+
+[Embedding]
+; OpenAI-compatible embeddings API.
+; For OpenAI:  ApiKey=sk-...  BaseUrl=https://api.openai.com/v1
+; For Ollama:  ApiKey=ollama  BaseUrl=http://localhost:11434/v1
+; Get an API key at https://platform.openai.com/api-keys
+ApiKey=sk-your-key-here
+Model=text-embedding-3-small
+BaseUrl=https://api.openai.com/v1
+
+[Chat]
+; OpenAI-compatible chat completions API.
+; For OpenAI:       ApiKey=sk-...    BaseUrl=https://api.openai.com/v1                                        Model=gpt-4.1-mini
+; For Gemini 3.1:   ApiKey=AIza...   BaseUrl=https://generativelanguage.googleapis.com/v1beta/openai           Model=gemini-3.1-flash-lite-preview
+; For Ollama:       ApiKey=ollama    BaseUrl=http://localhost:11434/v1                                         Model=llama3
+ApiKey=AIza-your-key-here
+Model=gemini-3.1-flash-lite-preview
+BaseUrl=https://generativelanguage.googleapis.com/v1beta/openai
+MaxTokens=1024
+
+[RAG]
+ChunkSize=512
+ChunkOverlap=64
+TopK=5
+
+[Storage]
+PdfDir=./var/pdf
+IndexDir=./var/index

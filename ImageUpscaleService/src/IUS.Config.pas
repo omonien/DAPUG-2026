@@ -24,6 +24,7 @@ type
     UploadDir: string;
     ResultDir: string;
     RetentionMinutes: Integer;
+    DescribeModel: string;
   end;
 
 function LoadConfig(const APath: string): TConfig;
@@ -57,6 +58,8 @@ begin
     Result.UploadDir := LIni.ReadString('Storage', 'UploadDir', './var/uploads');
     Result.ResultDir := LIni.ReadString('Storage', 'ResultDir', './var/results');
     Result.RetentionMinutes := LIni.ReadInteger('Storage', 'RetentionMinutes', 30);
+    Result.DescribeModel := LIni.ReadString('Describer', 'Model',
+      'gemini-3.1-flash-lite-preview');
   finally
     LIni.Free;
   end;

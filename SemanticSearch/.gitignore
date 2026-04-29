@@ -1,0 +1,20 @@
+# Build output (binaries + DCUs land here; keep the dir, drop the contents)
+build/Win32/
+build/Win64/
+build/Linux64/
+
+# Delphi local artefacts
+*.identcache
+*.local
+*.dsk
+*.tvsconfig
+__history/
+__recovery/
+*.~*
+
+# Runtime config (contains API keys) and runtime storage
+config.ini
+var/
+
+# DX.Pdfium4D native binaries (placed next to exe at build time)
+pdfium.dll

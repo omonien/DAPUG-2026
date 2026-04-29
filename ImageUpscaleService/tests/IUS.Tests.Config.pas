@@ -20,6 +20,8 @@ type
     [Test] procedure RaisesError_WhenApiKeyDoesNotStartWithAIza;
     [Test] procedure RaisesError_WhenProviderInvalid;
     [Test] procedure DefaultsApplied_WhenOptionalKeysMissing;
+    [Test] procedure DescribeModel_DefaultsTo_3_1_FlashLite_Preview;
+    [Test] procedure DescribeModel_OverriddenInIniFile;
   end;
 
 implementation
@@ -94,6 +96,26 @@ begin
   Assert.AreEqual('gemini-3-pro-image-preview', LCfg.Model);
   Assert.AreEqual('native', LCfg.Provider);
   Assert.AreEqual(30, LCfg.RetentionMinutes);
+end;
+
+procedure TConfigTests.DescribeModel_DefaultsTo_3_1_FlashLite_Preview;
+var
+  LCfg: TConfig;
+begin
+  WriteIni('[Gemini]'#13#10'ApiKey=AIzaXYZ'#13#10);
+  LCfg := LoadConfig(FIniPath);
+  Assert.AreEqual('gemini-3.1-flash-lite-preview', LCfg.DescribeModel);
+end;
+
+procedure TConfigTests.DescribeModel_OverriddenInIniFile;
+var
+  LCfg: TConfig;
+begin
+  WriteIni(
+    '[Gemini]'#13#10'ApiKey=AIzaXYZ'#13#10 +
+    '[Describer]'#13#10'Model=gemini-3-flash-preview'#13#10);
+  LCfg := LoadConfig(FIniPath);
+  Assert.AreEqual('gemini-3-flash-preview', LCfg.DescribeModel);
 end;
 
 initialization

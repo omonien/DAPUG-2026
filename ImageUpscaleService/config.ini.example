@@ -19,3 +19,9 @@ Provider=native
 UploadDir=./var/uploads
 ResultDir=./var/results
 RetentionMinutes=30
+
+[Describer]
+; Gemini Flash model used to describe the upscaled image after a job
+; succeeds. The describe call is async, fire-and-forget; failures here
+; never affect the upscale result.
+Model=gemini-3.1-flash-lite-preview
