@@ -1,3 +1,10 @@
+<!--
+  hx-trigger is "load delay:1s" (NOT "load delay:1s, every 1s"). Each
+  pending response re-renders this fragment, which fires another single
+  load event — so the chain continues only as long as the server keeps
+  returning pending. Done returns describe_done.html (no trigger),
+  Failed returns an empty body; either way polling stops naturally.
+-->
 <div class="describe-slot describe-pending"
      hx-get="/describe/@jobId"
      hx-trigger="load delay:1s"

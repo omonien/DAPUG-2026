@@ -3,14 +3,15 @@
   ///   Horse route handlers wired to the job queue and the template renderer.
   /// </summary>
   /// <remarks>
-  ///   Six routes: GET /, POST /upscale, GET /jobs/:id, GET /original/:id,
-  ///   GET /result/:id, GET /healthz, plus a static-file handler for /static/*.
+  ///   Seven routes: GET /, POST /upscale, GET /jobs/:id, GET /original/:id,
+  ///   GET /result/:id, GET /describe/:id, GET /healthz, plus a static-file
+  ///   handler for /static/*.
   ///
   ///   Templates are rendered with Web.Stencils. The full page (index.html)
   ///   opts into the master layout via the @LayoutPage directive; layout.html
   ///   exposes the slot via @RenderBody. HTMX fragment templates (job_pending,
-  ///   job_done, job_error) intentionally omit @LayoutPage so they render as
-  ///   bare HTML for hx-swap.
+  ///   job_done, job_error, describe_pending, describe_done) intentionally omit
+  ///   @LayoutPage so they render as bare HTML for hx-swap.
   /// </remarks>
   /// <copyright>
   ///   Copyright (c) 2026 Olaf Monien. MIT License.
