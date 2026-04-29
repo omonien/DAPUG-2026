@@ -23,7 +23,8 @@ uses
   System.Classes,
   System.Generics.Collections,
   System.SyncObjs,
-  IUS.Upscaler.Intf;
+  IUS.Upscaler.Intf,
+  IUS.Describer.Intf;
 
 type
   TJobStatus = (Queued, Running, Done, Error);
@@ -53,6 +54,7 @@ type
     FWorkers: TArray<TThread>;
     FRunning: Boolean;
     FUpscaler: IUpscaler;
+    FDescriber: IDescriber;
     FResultDir: string;
     FCleanup: TThread;
     FCleanupInterval: Integer;
@@ -76,7 +78,8 @@ type
     function Count: Integer;
 
     procedure StartWorkers(const ACount: Integer;
-                           const AUpscaler: IUpscaler;
+                           const AUpscaler:  IUpscaler;
+                           const ADescriber: IDescriber;
                            const AResultDir: string);
     procedure StopWorkers;
 
@@ -269,12 +272,14 @@ begin
 end;
 
 procedure TJobQueue.StartWorkers(const ACount: Integer;
-                                 const AUpscaler: IUpscaler;
+                                 const AUpscaler:  IUpscaler;
+                                 const ADescriber: IDescriber;
                                  const AResultDir: string);
 var
   I: Integer;
 begin
   FUpscaler := AUpscaler;
+  FDescriber := ADescriber;
   FResultDir := AResultDir;
   IUS.Storage.EnsureDirectory(FResultDir);
   FRunning := True;
@@ -296,6 +301,30 @@ begin
             IUS.Storage.WriteAllBytes(LResultPath, LResult);
             SetResult(LJob.Id, LResultPath);
             Writeln(Format('job=%s running->done', [Copy(LJob.Id.ToString, 2, 8)]));
+
+            // Fire-and-forget describer. Status flips to Running so the
+            // /describe/:id route can show the polling fragment immediately.
+            // The describe thread is anonymous (FreeOnTerminate := True by
+            // default) and reads the result PNG from disk so it does not pin
+            // the upscale's working buffers.
+            SetDescribeRunning(LJob.Id);
+            TThread.CreateAnonymousThread(
+              procedure
+              var LDesc: TDescription; LBytes: TBytes;
+              begin
+                try
+                  LBytes := IUS.Storage.ReadAllBytes(LResultPath);
+                  LDesc  := FDescriber.Describe(LBytes, 'image/png');
+                  SetDescribeDone(LJob.Id, LDesc.Title, LDesc.Caption);
+                except
+                  on E: Exception do
+                  begin
+                    SetDescribeFailed(LJob.Id);
+                    Writeln(Format('job=%s describe failed: %s',
+                      [Copy(LJob.Id.ToString, 2, 8), E.Message]));
+                  end;
+                end;
+              end).Start;
           except
             on E: Exception do
             begin

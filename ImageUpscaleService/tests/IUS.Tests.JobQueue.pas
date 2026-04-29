@@ -22,6 +22,8 @@ type
     [Test] procedure SetDescribeRunning_TransitionsState;
     [Test] procedure SetDescribeDone_StoresTitleAndCaption;
     [Test] procedure SetDescribeFailed_TransitionsState;
+    [Test] procedure Workers_RunDescriber_AfterUpscaleSucceeds;
+    [Test] procedure Workers_DescribeFails_DoesNotAffectJobStatus;
   end;
 
 implementation
@@ -35,6 +37,8 @@ uses
   System.IOUtils,
   IUS.Upscaler.Intf,
   IUS.Upscaler.Fake,
+  IUS.Describer.Intf,
+  IUS.Describer.Fake,
   IUS.JobQueue;
 
 function MakeJob(const AQueue: TJobQueue): TGuid;
@@ -178,7 +182,7 @@ begin
   LQueue := TJobQueue.Create(20);
   try
     LFake := TFakeUpscaler.Create;
-    LQueue.StartWorkers(3, LFake, TPath.GetTempPath);
+    LQueue.StartWorkers(3, LFake, TFakeDescriber.Create, TPath.GetTempPath);
 
     LTmp := TPath.Combine(TPath.GetTempPath, 'src_' + TGuid.NewGuid.ToString + '.png');
     TFile.WriteAllBytes(LTmp, TBytes.Create($89, $50, $4E, $47));
@@ -292,6 +296,89 @@ begin
     Assert.IsTrue(LQueue.TryGet(LId, LFetched));
     Assert.AreEqual(Ord(TDescribeStatus.Failed), Ord(LFetched.DescribeStatus));
   finally
+    LQueue.Free;
+  end;
+end;
+
+procedure TJobQueueTests.Workers_RunDescriber_AfterUpscaleSucceeds;
+var
+  LQueue: TJobQueue;
+  LFakeUp: TFakeUpscaler;
+  LFakeDesc: TFakeDescriber;
+  LJob, LFetched: TJob;
+  LDeadline: TDateTime;
+  LTmp: string;
+begin
+  LQueue := TJobQueue.Create(20);
+  try
+    LFakeUp := TFakeUpscaler.Create;
+    LFakeDesc := TFakeDescriber.Create;
+    LQueue.StartWorkers(2, LFakeUp, LFakeDesc, TPath.GetTempPath);
+
+    LTmp := TPath.Combine(TPath.GetTempPath, 'src_' + TGuid.NewGuid.ToString + '.png');
+    TFile.WriteAllBytes(LTmp, TBytes.Create($89, $50, $4E, $47));
+    try
+      Assert.IsTrue(LQueue.TryEnqueue('image/png', LTmp, TUpscaleResolution.Res2K, LJob));
+      // Wait for the upscale + describe pair to complete.
+      LDeadline := IncSecond(Now, 5);
+      repeat
+        Sleep(50);
+        Assert.IsTrue(LQueue.TryGet(LJob.Id, LFetched));
+      until (LFetched.DescribeStatus in [TDescribeStatus.Done, TDescribeStatus.Failed])
+            or (Now > LDeadline);
+
+      Assert.AreEqual(Ord(TJobStatus.Done),       Ord(LFetched.Status), LFetched.ErrorMsg);
+      Assert.AreEqual(Ord(TDescribeStatus.Done),  Ord(LFetched.DescribeStatus));
+      Assert.IsTrue(Length(LFetched.DescribeTitle)   > 0);
+      Assert.IsTrue(Length(LFetched.DescribeCaption) > 0);
+      Assert.AreEqual(1, LFakeDesc.CallCount);
+    finally
+      if TFile.Exists(LTmp) then TFile.Delete(LTmp);
+    end;
+  finally
+    LQueue.StopWorkers;
+    LQueue.Free;
+  end;
+end;
+
+procedure TJobQueueTests.Workers_DescribeFails_DoesNotAffectJobStatus;
+var
+  LQueue: TJobQueue;
+  LFakeUp: TFakeUpscaler;
+  LFakeDesc: TFakeDescriber;
+  LJob, LFetched: TJob;
+  LDeadline: TDateTime;
+  LTmp: string;
+begin
+  LQueue := TJobQueue.Create(20);
+  try
+    LFakeUp := TFakeUpscaler.Create;
+    LFakeDesc := TFakeDescriber.Create;
+    LFakeDesc.RaiseOnNextCall(EDescriberQuotaError);
+    LQueue.StartWorkers(2, LFakeUp, LFakeDesc, TPath.GetTempPath);
+
+    LTmp := TPath.Combine(TPath.GetTempPath, 'src_' + TGuid.NewGuid.ToString + '.png');
+    TFile.WriteAllBytes(LTmp, TBytes.Create($89, $50, $4E, $47));
+    try
+      Assert.IsTrue(LQueue.TryEnqueue('image/png', LTmp, TUpscaleResolution.Res2K, LJob));
+      LDeadline := IncSecond(Now, 5);
+      repeat
+        Sleep(50);
+        Assert.IsTrue(LQueue.TryGet(LJob.Id, LFetched));
+      until (LFetched.DescribeStatus in [TDescribeStatus.Done, TDescribeStatus.Failed])
+            or (Now > LDeadline);
+
+      // Upscale still succeeded.
+      Assert.AreEqual(Ord(TJobStatus.Done),         Ord(LFetched.Status), LFetched.ErrorMsg);
+      // But describe failed silently.
+      Assert.AreEqual(Ord(TDescribeStatus.Failed),  Ord(LFetched.DescribeStatus));
+      Assert.AreEqual('', LFetched.DescribeTitle);
+      Assert.AreEqual('', LFetched.DescribeCaption);
+    finally
+      if TFile.Exists(LTmp) then TFile.Delete(LTmp);
+    end;
+  finally
+    LQueue.StopWorkers;
     LQueue.Free;
   end;
 end;
