@@ -70,7 +70,9 @@ begin
 
     LInlineData := TJSONObject.Create;
     LInlineData.AddPair('mimeType', ASourceMime);
-    LInlineData.AddPair('data', TNetEncoding.Base64.EncodeBytesToString(ASource));
+    // Base64String (not Base64) is the unbroken-line variant. The Gemini API
+    // rejects RFC 2045-style 76-char line wrapping with "Base64 decoding failed".
+    LInlineData.AddPair('data', TNetEncoding.Base64String.EncodeBytesToString(ASource));
     LImagePart := TJSONObject.Create;
     LImagePart.AddPair('inlineData', LInlineData);
     LPartsArr.AddElement(LImagePart);
@@ -115,7 +117,7 @@ begin
       if LInlineData <> nil then
       begin
         LData := LInlineData.GetValue<string>('data');
-        Result := TNetEncoding.Base64.DecodeStringToBytes(LData);
+        Result := TNetEncoding.Base64String.DecodeStringToBytes(LData);
         Exit;
       end;
     end;

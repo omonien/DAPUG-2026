@@ -64,7 +64,9 @@ var
   LResolutionStr: string;
 begin
   LClient := TGeminiFactory.CreateInstance(FApiKey);
-  LBase64 := TNetEncoding.Base64.EncodeBytesToString(ASource);
+  // Base64String (not Base64) is the unbroken-line variant. The Gemini API
+  // rejects RFC 2045-style 76-char line wrapping with "Base64 decoding failed".
+  LBase64 := TNetEncoding.Base64String.EncodeBytesToString(ASource);
   LResolutionStr := ResolutionToApiString(AResolution);
 
   try
@@ -102,7 +104,7 @@ begin
         for LPart in LCandidate.Content.Parts do
           if Assigned(LPart.InlineData) then
           begin
-            Result := TNetEncoding.Base64.DecodeStringToBytes(LPart.InlineData.Data);
+            Result := TNetEncoding.Base64String.DecodeStringToBytes(LPart.InlineData.Data);
             Exit;
           end;
 
