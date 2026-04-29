@@ -41,6 +41,8 @@ type
     function RenderError(const AMessage: string): string;
     function RenderPending(const AJob: TJob): string;
     function RenderDone(const AJob: TJob): string;
+    function RenderDescribePending(const AJob: TJob): string;
+    function RenderDescribeDone(const AJob: TJob): string;
     function StatusText(const AStatus: TJobStatus): string;
     function MimeToExtension(const AMime: string): string;
     function ExtensionToMime(const AExt: string): string;
@@ -140,6 +142,19 @@ begin
   Result := RenderPage('job_done.html',
     ['jobId', AJob.Id.ToString,
      'resolutionText', ResolutionToApiString(AJob.Resolution)]);
+end;
+
+function TRoutesContext.RenderDescribePending(const AJob: TJob): string;
+begin
+  Result := RenderPage('describe_pending.html',
+    ['jobId', AJob.Id.ToString]);
+end;
+
+function TRoutesContext.RenderDescribeDone(const AJob: TJob): string;
+begin
+  Result := RenderPage('describe_done.html',
+    ['title',   AJob.DescribeTitle,
+     'caption', AJob.DescribeCaption]);
 end;
 
 function TRoutesContext.MimeToExtension(const AMime: string): string;
@@ -320,6 +335,33 @@ begin
         Exit;
       end;
       Res.SendFile(LJob.ResultPath, 'image/png');
+    end);
+
+  THorse.Get('/describe/:id',
+    procedure(Req: THorseRequest; Res: THorseResponse)
+    var
+      LId: TGuid;
+      LJob: TJob;
+    begin
+      if not LSelf.TryParseJobId(Req.Params['id'], LId) then
+      begin
+        Res.Status(404).Send('');
+        Exit;
+      end;
+      if not LSelf.FQueue.TryGet(LId, LJob) then
+      begin
+        Res.Status(404).Send('');
+        Exit;
+      end;
+      case LJob.DescribeStatus of
+        TDescribeStatus.NotRequested,
+        TDescribeStatus.Running:
+          Res.Send(LSelf.RenderDescribePending(LJob));
+        TDescribeStatus.Done:
+          Res.Send(LSelf.RenderDescribeDone(LJob));
+        TDescribeStatus.Failed:
+          Res.Send(''); // empty body collapses the slot, silent fail.
+      end;
     end);
 
   THorse.Get('/static/:filename',
