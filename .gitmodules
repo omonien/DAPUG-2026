@@ -10,3 +10,9 @@
 [submodule "ImageUpscaleService/libs/DelphiGemini"]
 	path = ImageUpscaleService/libs/DelphiGemini
 	url = https://github.com/MaxiDonkey/DelphiGemini.git
+[submodule "SemanticSearch/libs/DX.Pdfium4D"]
+	path = SemanticSearch/libs/DX.Pdfium4D
+	url = https://github.com/omonien/DX.Pdfium4D.git
+[submodule "SemanticSearch/libs/DUnitX"]
+	path = SemanticSearch/libs/DUnitX
+	url = https://github.com/VSoftTechnologies/DUnitX.git
