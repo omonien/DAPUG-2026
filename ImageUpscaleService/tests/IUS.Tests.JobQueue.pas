@@ -22,6 +22,7 @@ type
     [Test] procedure SetDescribeRunning_TransitionsState;
     [Test] procedure SetDescribeDone_StoresTitleAndCaption;
     [Test] procedure SetDescribeFailed_TransitionsState;
+    [Test] procedure DeleteJob_RemovesJobAndFiles;
     [Test] procedure Workers_RunDescriber_AfterUpscaleSucceeds;
     [Test] procedure Workers_DescribeFails_DoesNotAffectJobStatus;
   end;
@@ -295,6 +296,35 @@ begin
     LQueue.SetDescribeFailed(LId);
     Assert.IsTrue(LQueue.TryGet(LId, LFetched));
     Assert.AreEqual(Ord(TDescribeStatus.Failed), Ord(LFetched.DescribeStatus));
+  finally
+    LQueue.Free;
+  end;
+end;
+
+procedure TJobQueueTests.DeleteJob_RemovesJobAndFiles;
+var
+  LQueue: TJobQueue;
+  LJob, LFetched: TJob;
+  LSrc, LResult: string;
+begin
+  LQueue := TJobQueue.Create(20);
+  try
+    LSrc := TPath.Combine(TPath.GetTempPath, 'delete_src_' + TGuid.NewGuid.ToString + '.png');
+    LResult := TPath.Combine(TPath.GetTempPath, 'delete_result_' + TGuid.NewGuid.ToString + '.png');
+    TFile.WriteAllBytes(LSrc, TBytes.Create($89, $50, $4E, $47));
+    TFile.WriteAllBytes(LResult, TBytes.Create($89, $50, $4E, $47));
+    try
+      Assert.IsTrue(LQueue.TryEnqueue('image/png', LSrc, TUpscaleResolution.Res2K, LJob));
+      LQueue.SetResult(LJob.Id, LResult);
+
+      Assert.IsTrue(LQueue.DeleteJob(LJob.Id));
+      Assert.IsFalse(LQueue.TryGet(LJob.Id, LFetched));
+      Assert.IsFalse(TFile.Exists(LSrc));
+      Assert.IsFalse(TFile.Exists(LResult));
+    finally
+      if TFile.Exists(LSrc) then TFile.Delete(LSrc);
+      if TFile.Exists(LResult) then TFile.Delete(LResult);
+    end;
   finally
     LQueue.Free;
   end;

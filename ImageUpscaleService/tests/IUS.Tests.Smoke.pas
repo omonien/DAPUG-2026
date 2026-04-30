@@ -18,6 +18,7 @@ type
     [Test] procedure Healthz_Returns200OkText;
     [Test] procedure GetIndex_Returns200WithUploadForm;
     [Test] procedure JobsRoute_AcceptsBraceWrappedGuid;
+    [Test] procedure ResultRoute_DeleteAfterDownload_RemovesJobAndFiles;
   end;
 
 implementation
@@ -197,6 +198,35 @@ begin
       '(regression: doubled braces in TryParseJobId)');
   finally
     if TFile.Exists(LSrc) then TFile.Delete(LSrc);
+  end;
+end;
+
+procedure TSmokeTests.ResultRoute_DeleteAfterDownload_RemovesJobAndFiles;
+var
+  LJob, LFetched: TJob;
+  LResp: IHTTPResponse;
+  LSrc, LResult: string;
+begin
+  LSrc := TPath.Combine(TPath.GetTempPath,
+    'smoke_src_' + TGuid.NewGuid.ToString + '.png');
+  LResult := TPath.Combine(TPath.GetTempPath,
+    'smoke_result_' + TGuid.NewGuid.ToString + '.png');
+  TFile.WriteAllBytes(LSrc, TBytes.Create($89, $50, $4E, $47));
+  TFile.WriteAllBytes(LResult, TBytes.Create($89, $50, $4E, $47));
+  try
+    Assert.IsTrue(GHarness.Queue.TryEnqueue('image/png', LSrc,
+      TUpscaleResolution.Res2K, LJob));
+    GHarness.Queue.SetResult(LJob.Id, LResult);
+
+    LResp := HttpGet('/result/' + LJob.Id.ToString + '?delete=1');
+
+    Assert.AreEqual(200, LResp.StatusCode);
+    Assert.IsFalse(GHarness.Queue.TryGet(LJob.Id, LFetched));
+    Assert.IsFalse(TFile.Exists(LSrc));
+    Assert.IsFalse(TFile.Exists(LResult));
+  finally
+    if TFile.Exists(LSrc) then TFile.Delete(LSrc);
+    if TFile.Exists(LResult) then TFile.Delete(LResult);
   end;
 end;
 

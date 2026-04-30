@@ -75,6 +75,7 @@ type
     procedure SetDescribeRunning(const AId: TGuid);
     procedure SetDescribeDone(const AId: TGuid; const ATitle, ACaption: string);
     procedure SetDescribeFailed(const AId: TGuid);
+    function DeleteJob(const AId: TGuid): Boolean;
     function Count: Integer;
 
     procedure StartWorkers(const ACount: Integer;
@@ -261,6 +262,28 @@ begin
   end;
 end;
 
+function TJobQueue.DeleteJob(const AId: TGuid): Boolean;
+var
+  LJob: TJob;
+begin
+  Result := False;
+  LJob := Default(TJob);
+  FLock.Enter;
+  try
+    if not FById.TryGetValue(AId, LJob) then
+      Exit(False);
+    FById.Remove(AId);
+    Result := True;
+  finally
+    FLock.Leave;
+  end;
+
+  if (LJob.SourcePath <> '') and TFile.Exists(LJob.SourcePath) then
+    TFile.Delete(LJob.SourcePath);
+  if (LJob.ResultPath <> '') and TFile.Exists(LJob.ResultPath) then
+    TFile.Delete(LJob.ResultPath);
+end;
+
 function TJobQueue.Count: Integer;
 begin
   FLock.Enter;
@@ -409,19 +432,7 @@ begin
     end;
   for LId in LExpired do
   begin
-    if TryGet(LId, LJob) then
-    begin
-      if (LJob.SourcePath <> '') and TFile.Exists(LJob.SourcePath) then
-        TFile.Delete(LJob.SourcePath);
-      if (LJob.ResultPath <> '') and TFile.Exists(LJob.ResultPath) then
-        TFile.Delete(LJob.ResultPath);
-    end;
-    FLock.Enter;
-    try
-      FById.Remove(LId);
-    finally
-      FLock.Leave;
-    end;
+    DeleteJob(LId);
   end;
 end;
 

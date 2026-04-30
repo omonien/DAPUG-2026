@@ -323,6 +323,9 @@ begin
     var
       LId: TGuid;
       LJob: TJob;
+      LDeleteAfterDownload: Boolean;
+      LBytes: TBytes;
+      LStream: TBytesStream;
     begin
       if not LSelf.TryParseJobId(Req.Params['id'], LId) then
       begin
@@ -335,6 +338,19 @@ begin
         Res.Status(404).Send('Not ready or expired');
         Exit;
       end;
+
+      LDeleteAfterDownload :=
+        SameText(Req.RawWebRequest.QueryFields.Values['delete'], '1') or
+        SameText(Req.RawWebRequest.QueryFields.Values['delete'], 'true');
+      if LDeleteAfterDownload then
+      begin
+        LBytes := ReadAllBytes(LJob.ResultPath);
+        LSelf.FQueue.DeleteJob(LId);
+        LStream := TBytesStream.Create(LBytes);
+        Res.SendFile(LStream, 'upscaled.png', 'image/png');
+        Exit;
+      end;
+
       Res.SendFile(LJob.ResultPath, 'image/png');
     end);
 
