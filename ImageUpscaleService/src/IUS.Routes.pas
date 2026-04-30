@@ -226,6 +226,11 @@ begin
       LJob: TJob;
     begin
       LRaw := Req.RawWebRequest;
+      if not IsSizeAccepted(LRaw.ContentLength) then
+      begin
+        Res.Status(413).Send(LSelf.RenderError('File too large (max 10 MB).'));
+        Exit;
+      end;
       if LRaw.Files.Count = 0 then
       begin
         Res.Status(422).Send(LSelf.RenderError('No file selected.'));
@@ -260,6 +265,11 @@ begin
         Res.Status(422).Send(LSelf.RenderError('Invalid resolution.'));
         Exit;
       end;
+      if LSelf.FQueue.Count >= 20 then
+      begin
+        Res.Status(503).Send(LSelf.RenderError('Server busy. Try again in a moment.'));
+        Exit;
+      end;
 
       EnsureDirectory(LSelf.FUploadDir);
       LSrcPath := TPath.Combine(LSelf.FUploadDir,
@@ -268,6 +278,8 @@ begin
 
       if not LSelf.FQueue.TryEnqueue(LMime, LSrcPath, LRes, LJob) then
       begin
+        if TFile.Exists(LSrcPath) then
+          TFile.Delete(LSrcPath);
         Res.Status(503).Send(LSelf.RenderError('Server busy. Try again in a moment.'));
         Exit;
       end;
@@ -323,6 +335,9 @@ begin
     var
       LId: TGuid;
       LJob: TJob;
+      LDeleteAfterDownload: Boolean;
+      LBytes: TBytes;
+      LStream: TBytesStream;
     begin
       if not LSelf.TryParseJobId(Req.Params['id'], LId) then
       begin
@@ -335,6 +350,19 @@ begin
         Res.Status(404).Send('Not ready or expired');
         Exit;
       end;
+
+      LDeleteAfterDownload :=
+        SameText(Req.RawWebRequest.QueryFields.Values['delete'], '1') or
+        SameText(Req.RawWebRequest.QueryFields.Values['delete'], 'true');
+      if LDeleteAfterDownload then
+      begin
+        LBytes := ReadAllBytes(LJob.ResultPath);
+        LSelf.FQueue.DeleteJob(LId);
+        LStream := TBytesStream.Create(LBytes);
+        Res.SendFile(LStream, 'upscaled.png', 'image/png');
+        Exit;
+      end;
+
       Res.SendFile(LJob.ResultPath, 'image/png');
     end);
 

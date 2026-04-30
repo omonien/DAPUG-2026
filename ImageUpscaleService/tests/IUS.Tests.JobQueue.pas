@@ -22,6 +22,8 @@ type
     [Test] procedure SetDescribeRunning_TransitionsState;
     [Test] procedure SetDescribeDone_StoresTitleAndCaption;
     [Test] procedure SetDescribeFailed_TransitionsState;
+    [Test] procedure DeleteJob_RemovesJobAndFiles;
+    [Test] procedure Workers_MapUpscalerErrors_ToSafeUserMessage;
     [Test] procedure Workers_RunDescriber_AfterUpscaleSucceeds;
     [Test] procedure Workers_DescribeFails_DoesNotAffectJobStatus;
   end;
@@ -40,6 +42,21 @@ uses
   IUS.Describer.Intf,
   IUS.Describer.Fake,
   IUS.JobQueue;
+
+type
+  TFaultingUpscaler = class(TInterfacedObject, IUpscaler)
+  public
+    function Upscale(const ASource: TBytes;
+                     const ASourceMime: string;
+                     const AResolution: TUpscaleResolution): TBytes;
+  end;
+
+function TFaultingUpscaler.Upscale(const ASource: TBytes;
+                                   const ASourceMime: string;
+                                   const AResolution: TUpscaleResolution): TBytes;
+begin
+  raise EUpscalerServerError.Create('500 upstream body with sensitive details');
+end;
 
 function MakeJob(const AQueue: TJobQueue): TGuid;
 var
@@ -296,6 +313,67 @@ begin
     Assert.IsTrue(LQueue.TryGet(LId, LFetched));
     Assert.AreEqual(Ord(TDescribeStatus.Failed), Ord(LFetched.DescribeStatus));
   finally
+    LQueue.Free;
+  end;
+end;
+
+procedure TJobQueueTests.DeleteJob_RemovesJobAndFiles;
+var
+  LQueue: TJobQueue;
+  LJob, LFetched: TJob;
+  LSrc, LResult: string;
+begin
+  LQueue := TJobQueue.Create(20);
+  try
+    LSrc := TPath.Combine(TPath.GetTempPath, 'delete_src_' + TGuid.NewGuid.ToString + '.png');
+    LResult := TPath.Combine(TPath.GetTempPath, 'delete_result_' + TGuid.NewGuid.ToString + '.png');
+    TFile.WriteAllBytes(LSrc, TBytes.Create($89, $50, $4E, $47));
+    TFile.WriteAllBytes(LResult, TBytes.Create($89, $50, $4E, $47));
+    try
+      Assert.IsTrue(LQueue.TryEnqueue('image/png', LSrc, TUpscaleResolution.Res2K, LJob));
+      LQueue.SetResult(LJob.Id, LResult);
+
+      Assert.IsTrue(LQueue.DeleteJob(LJob.Id));
+      Assert.IsFalse(LQueue.TryGet(LJob.Id, LFetched));
+      Assert.IsFalse(TFile.Exists(LSrc));
+      Assert.IsFalse(TFile.Exists(LResult));
+    finally
+      if TFile.Exists(LSrc) then TFile.Delete(LSrc);
+      if TFile.Exists(LResult) then TFile.Delete(LResult);
+    end;
+  finally
+    LQueue.Free;
+  end;
+end;
+
+procedure TJobQueueTests.Workers_MapUpscalerErrors_ToSafeUserMessage;
+var
+  LQueue: TJobQueue;
+  LJob, LFetched: TJob;
+  LDeadline: TDateTime;
+  LTmp: string;
+begin
+  LQueue := TJobQueue.Create(20);
+  try
+    LQueue.StartWorkers(1, TFaultingUpscaler.Create, TFakeDescriber.Create, TPath.GetTempPath);
+
+    LTmp := TPath.Combine(TPath.GetTempPath, 'src_' + TGuid.NewGuid.ToString + '.png');
+    TFile.WriteAllBytes(LTmp, TBytes.Create($89, $50, $4E, $47));
+    try
+      Assert.IsTrue(LQueue.TryEnqueue('image/png', LTmp, TUpscaleResolution.Res2K, LJob));
+      LDeadline := IncSecond(Now, 5);
+      repeat
+        Sleep(50);
+        Assert.IsTrue(LQueue.TryGet(LJob.Id, LFetched));
+      until (LFetched.Status = TJobStatus.Error) or (Now > LDeadline);
+
+      Assert.AreEqual(Ord(TJobStatus.Error), Ord(LFetched.Status));
+      Assert.AreEqual('Upscale service temporarily unavailable.', LFetched.ErrorMsg);
+    finally
+      if TFile.Exists(LTmp) then TFile.Delete(LTmp);
+    end;
+  finally
+    LQueue.StopWorkers;
     LQueue.Free;
   end;
 end;

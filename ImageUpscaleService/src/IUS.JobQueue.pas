@@ -75,6 +75,7 @@ type
     procedure SetDescribeRunning(const AId: TGuid);
     procedure SetDescribeDone(const AId: TGuid; const ATitle, ACaption: string);
     procedure SetDescribeFailed(const AId: TGuid);
+    function DeleteJob(const AId: TGuid): Boolean;
     function Count: Integer;
 
     procedure StartWorkers(const ACount: Integer;
@@ -97,6 +98,22 @@ uses
   System.IOUtils,
   System.DateUtils,
   IUS.Storage;
+
+function UserMessageForUpscaleError(const E: Exception): string;
+begin
+  if E is EUpscalerNetworkError then
+    Result := 'Upscale service unreachable. Try again.'
+  else if E is EUpscalerRejectedError then
+    Result := 'Image rejected by upscale service.'
+  else if E is EUpscalerQuotaError then
+    Result := 'Daily quota reached. Try again later.'
+  else if E is EUpscalerServerError then
+    Result := 'Upscale service temporarily unavailable.'
+  else if E is EUpscalerEmptyResultError then
+    Result := 'Upscale service returned no image.'
+  else
+    Result := 'Upscale failed. Try again.';
+end;
 
 constructor TJobQueue.Create(const ACap: Integer);
 begin
@@ -261,6 +278,28 @@ begin
   end;
 end;
 
+function TJobQueue.DeleteJob(const AId: TGuid): Boolean;
+var
+  LJob: TJob;
+begin
+  Result := False;
+  LJob := Default(TJob);
+  FLock.Enter;
+  try
+    if not FById.TryGetValue(AId, LJob) then
+      Exit(False);
+    FById.Remove(AId);
+    Result := True;
+  finally
+    FLock.Leave;
+  end;
+
+  if (LJob.SourcePath <> '') and TFile.Exists(LJob.SourcePath) then
+    TFile.Delete(LJob.SourcePath);
+  if (LJob.ResultPath <> '') and TFile.Exists(LJob.ResultPath) then
+    TFile.Delete(LJob.ResultPath);
+end;
+
 function TJobQueue.Count: Integer;
 begin
   FLock.Enter;
@@ -328,7 +367,7 @@ begin
           except
             on E: Exception do
             begin
-              SetError(LJob.Id, E.Message);
+              SetError(LJob.Id, UserMessageForUpscaleError(E));
               Writeln(Format('job=%s running->error: %s',
                 [Copy(LJob.Id.ToString, 2, 8), E.Message]));
             end;
@@ -409,19 +448,7 @@ begin
     end;
   for LId in LExpired do
   begin
-    if TryGet(LId, LJob) then
-    begin
-      if (LJob.SourcePath <> '') and TFile.Exists(LJob.SourcePath) then
-        TFile.Delete(LJob.SourcePath);
-      if (LJob.ResultPath <> '') and TFile.Exists(LJob.ResultPath) then
-        TFile.Delete(LJob.ResultPath);
-    end;
-    FLock.Enter;
-    try
-      FById.Remove(LId);
-    finally
-      FLock.Leave;
-    end;
+    DeleteJob(LId);
   end;
 end;
 
