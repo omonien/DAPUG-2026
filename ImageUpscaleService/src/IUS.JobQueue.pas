@@ -99,6 +99,22 @@ uses
   System.DateUtils,
   IUS.Storage;
 
+function UserMessageForUpscaleError(const E: Exception): string;
+begin
+  if E is EUpscalerNetworkError then
+    Result := 'Upscale service unreachable. Try again.'
+  else if E is EUpscalerRejectedError then
+    Result := 'Image rejected by upscale service.'
+  else if E is EUpscalerQuotaError then
+    Result := 'Daily quota reached. Try again later.'
+  else if E is EUpscalerServerError then
+    Result := 'Upscale service temporarily unavailable.'
+  else if E is EUpscalerEmptyResultError then
+    Result := 'Upscale service returned no image.'
+  else
+    Result := 'Upscale failed. Try again.';
+end;
+
 constructor TJobQueue.Create(const ACap: Integer);
 begin
   inherited Create;
@@ -351,7 +367,7 @@ begin
           except
             on E: Exception do
             begin
-              SetError(LJob.Id, E.Message);
+              SetError(LJob.Id, UserMessageForUpscaleError(E));
               Writeln(Format('job=%s running->error: %s',
                 [Copy(LJob.Id.ToString, 2, 8), E.Message]));
             end;

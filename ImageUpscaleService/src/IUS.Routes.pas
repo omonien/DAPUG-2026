@@ -226,6 +226,11 @@ begin
       LJob: TJob;
     begin
       LRaw := Req.RawWebRequest;
+      if not IsSizeAccepted(LRaw.ContentLength) then
+      begin
+        Res.Status(413).Send(LSelf.RenderError('File too large (max 10 MB).'));
+        Exit;
+      end;
       if LRaw.Files.Count = 0 then
       begin
         Res.Status(422).Send(LSelf.RenderError('No file selected.'));
@@ -260,6 +265,11 @@ begin
         Res.Status(422).Send(LSelf.RenderError('Invalid resolution.'));
         Exit;
       end;
+      if LSelf.FQueue.Count >= 20 then
+      begin
+        Res.Status(503).Send(LSelf.RenderError('Server busy. Try again in a moment.'));
+        Exit;
+      end;
 
       EnsureDirectory(LSelf.FUploadDir);
       LSrcPath := TPath.Combine(LSelf.FUploadDir,
@@ -268,6 +278,8 @@ begin
 
       if not LSelf.FQueue.TryEnqueue(LMime, LSrcPath, LRes, LJob) then
       begin
+        if TFile.Exists(LSrcPath) then
+          TFile.Delete(LSrcPath);
         Res.Status(503).Send(LSelf.RenderError('Server busy. Try again in a moment.'));
         Exit;
       end;
